@@ -1,0 +1,307 @@
+# flashbrowse
+
+Industrial-grade, single-binary, headless browser controller and token-compression
+engine written in pure Rust - built for LLM agents.
+
+- Zero Python/Node/JVM. No Playwright/Puppeteer/Selenium shims.
+- Raw CDP JSON-RPC 2.0 over WebSocket (browser-level `flatten` sessions).
+- AXTree-first compression: **3x - 23x fewer tokens** than Playwright/Puppeteer
+  accessibility snapshots (and 75-99% less than raw HTML on content pages).
+- Native MCP stdio server for Claude Code, Cursor, Codex.
+- **Faster** than Playwright *and* Puppeteer on the agent loop.
+
+> **Honest limits.** Stealth defeats naive bots, not determined fingerprinting
+> (Canvas/Audio/TLS entropy remain). `select` matches text/value. Markdown
+> extraction is lightweight. `flashbrowse setup` fetches managed Chrome (~120 MB
+> once). See `RELEASE.md` and the benchmarks below.
+
+Workspace layout:
+
+```text
+crates/flashbrowse-cdp    CDP client, launcher, transport, protocol types
+crates/flashbrowse-bidi   Firefox BiDi groundwork (discovery; engine not live yet)
+crates/flashbrowse-core   session, stealth, interceptor, tree compression, actions
+crates/flashbrowse-mcp    MCP JSON-RPC stdio server
+crates/flashbrowse-cli    CLI binary (`flashbrowse`)
+scripts/soak.mjs          long-running soak/load harness
+```
+
+## Install (one script)
+
+macOS / Linux:
+```sh
+curl -fsSL https://raw.githubusercontent.com/nhrbuilds/flashbrowse/main/install.sh | sh
+```
+
+Windows (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/nhrbuilds/flashbrowse/main/install.ps1 | iex
+```
+
+Then (browser once - or skip if you already have Chrome):
+```sh
+flashbrowse setup                          # Chrome-for-Testing -> ~/.cache/flashbrowse/chrome (~120MB)
+flashbrowse open https://example.com       # just works
+flashbrowse mcp                            # stdio server for Claude Code / Cursor / Codex
+```
+
+**No signing or notarization is required.** Like any normal CLI binary:
+`curl | sh`, `npm i -g flashbrowse`, `cargo install flashbrowse` and
+`brew install flashbrowse` all work out of the box. (macOS Gatekeeper only
+blocks files that a *browser* marked with the quarantine attribute; the
+installer clears it for you.) See `RELEASE.md` for the details.
+
+## Build from source
+
+```sh
+git clone https://github.com/nhrbuilds/flashbrowse
+cargo build --release        # single binary, LTO+strip
+./target/release/flashbrowse setup
+./target/release/flashbrowse open https://example.com
+```
+
+Requires a Chromium: use `flashbrowse setup` (managed), a system
+`google-chrome-stable`/`google-chrome`/`chromium` on PATH, or
+`CHROME_PATH=/path/to/chrome`.
+
+---
+
+## Commands
+
+```text
+flashbrowse setup                    # download managed Chrome-for-Testing (~120 MB, once)
+flashbrowse open <url>               # compressed action tree (ephemeral browser)
+flashbrowse open <url> --session-id s1   # ...and keep the browser alive
+flashbrowse act <id> --session-id s1 --action click --value ...
+flashbrowse dump <url> --format markdown|axtree
+flashbrowse bench <url>              # latency + token self-measurement
+flashbrowse mcp                      # MCP stdio server for Claude Code / Cursor / Codex
+flashbrowse close --session-id s1    # stop a persistent browser
+
+flashbrowse doctor                   # environment diagnostics (exit 1 on failure)
+flashbrowse doctor --json            # same, machine readable
+flashbrowse stats                    # latency / token / error stats from the metrics trail
+flashbrowse stats --limit 500 --json
+flashbrowse update                   # check for a newer release
+flashbrowse update --check           # report only, no install instructions
+```
+
+Global flags: `--chrome-path <p>`, `--text-only`, `--full-render`,
+`--resource-policy agent-default|text-only|full-render`, `--verbose`,
+`--log-format text|json`.
+
+Precedence: `--resource-policy` > `--full-render` / `--text-only` >
+`FLASHBROWSE_RESOURCE_POLICY` > `agent-default`. Conflicting flags fail
+loudly rather than silently picking one.
+
+**One MCP for hands and eyes:** after `browser_open` / `browser_act`, call
+`browser_screenshot` on the same session (do not start Playwright or a second
+browser MCP). In agent-default mode, screenshots temporarily allow fonts and
+images to load (and re-request the images the network layer blocked, so the
+capture shows real pixels); the action tree token count is unchanged.
+
+### Observability
+
+Every operation (CLI **and** MCP tool calls) appends a record to
+`~/.cache/flashbrowse/metrics.jsonl`:
+
+```json
+{"ts":1794660615,"op":"mcp:browser_open","target":"https://example.com","ms":512,"tokens":1215,"actions":24,"ok":true}
+```
+
+`flashbrowse stats` aggregates that trail:
+
+```text
+flashbrowse stats  (last 200 operations)
+  latency   p50 282 ms   p95 1453 ms   max 1962 ms   avg 351 ms
+  payload   p50 1215 tokens   total 1834631 tokens   avg 12.4 actions
+  errors    15 (0.60%)
+```
+
+Logs go to **stderr only** (stdout stays pure JSON-RPC, which MCP requires).
+`--log-format json` makes every log line a single JSON object, ready for a log
+shipper:
+
+```sh
+flashbrowse open https://example.com --log-format json
+```
+
+### Update channel
+
+`flashbrowse update` checks GitHub Releases for a newer tag. The channel is
+selected with `FLASHBROWSE_UPDATE_CHANNEL`:
+
+| value | picks |
+|---|---|
+| `stable` (default) | the latest `vX.Y.Z` release |
+| `beta` | the latest `vX.Y.Z-beta*` / `-rc*` |
+| `nightly` | the latest `vX.Y.Z-nightly*` |
+| `off` | never check |
+
+The check is advisory: it prints what is available and how to install it. It
+never modifies the installation on its own.
+
+### `flashbrowse doctor`
+
+Pre-flight diagnostics for agents and CI: Chromium presence and version,
+managed-Chrome install, cache-dir writability, free temp space, available
+memory, stored sessions, and orphaned browser processes. Exits `1` if a
+blocking check fails.
+
+```text
+flashbrowse doctor  (v1.0.1)
+  [PASS] chromium         /usr/bin/google-chrome-stable (Google Chrome 147.0.7727.116)
+  [PASS] managed-chrome   installed at /home/user/.cache/flashbrowse/chrome
+  [PASS] cache-dir        /home/user/.cache/flashbrowse (writable=true)
+  [PASS] temp-space       6327 MB free in /tmp
+  [PASS] memory           15526 MB available
+  [PASS] sessions         0 stored (flashbrowse close --session-id <id> to stop)
+  [PASS] orphan-browsers  0 flashbrowse-managed browser(s) still running
+```
+
+---
+
+## Benchmarks
+
+**Method:** every tool is measured **sequentially** - one tool at a time, one
+page open at a time - against the same Chrome 147 binary and the same local
+page (a 30-row table with 60 links). Nothing runs in parallel, so the numbers
+are not distorted by machine load. 30 iterations per tool, 0 failures, 0 leaked
+browser processes. Token estimate: 1 token = 4 characters.
+
+### Agent loop (the real workload: one browser, N pages)
+
+| | min | median | p95 | max | agent payload |
+|---|---|---|---|---|---|
+| **flashbrowse** | **490 ms** | **524 ms** | **568 ms** | 1579 ms | **1215 tokens** |
+| Puppeteer | 538 ms | 564 ms | 666 ms | 731 ms | 21817 tokens |
+| Playwright | 541 ms | 579 ms | 786 ms | 843 ms | 8589 tokens |
+
+**flashbrowse is 1.08x faster than Puppeteer, 1.10x faster than Playwright,
+and uses 18.0x / 7.1x fewer tokens.** (The single 1579 ms outlier is the very
+first open of a session, which spawns Chromium.)
+
+> The payload grew from an earlier 813 tokens to 1215 because the compressor
+> stopped **dropping table cells**. The old number was smaller because the
+> table content was missing, not because it was compressed better.
+
+### Cold open (a fresh browser per page)
+
+| | min | median | p95 | tokens |
+|---|---|---|---|---|
+| flashbrowse | 1066 ms | 2066 ms | 2490 ms | 1215 |
+| Puppeteer | 827 ms | 896 ms | 1008 ms | 21555 |
+| Playwright | 884 ms | 1059 ms | 1291 ms | 8589 |
+
+Cold open is a browser-startup benchmark more than a page benchmark: everyone
+pays the Chrome spawn, and flashbrowse additionally waits for the page to be
+*complete* (see below). The agent loop is where flashbrowse is designed to win.
+
+### Real sites (tokens, observed)
+
+| URL | flashbrowse | Puppeteer | Playwright | raw HTML |
+|---|---|---|---|---|
+| example.com | **272 t** | 1358 t | 814 t | 145 t |
+| news.ycombinator.com | **2143 t** | 47 930 t | 19 269 t | 8620 t |
+| github.com | **1719 t** | 40 137 t | 17 102 t | 131 319 t |
+
+> The Puppeteer and Playwright columns are much larger than in earlier
+> revisions of this table because they are measured with
+> `interestingOnly: false` - the full accessibility tree, which is what an
+> agent actually has to sift through. The flashbrowse column is the
+> compressed action tree, which is what flashbrowse returns.
+
+### Stress suite (`cargo test --workspace`)
+
+| Test | Result |
+|---|---|
+| 50k-node synthetic AXTree | **98.8%** reduction (34.4 MB -> 408 KB) |
+| 20x sequential `open` | avg **234 ms**, p95 283 ms |
+| 100x action storm | avg **286 ms**, p95 347 ms, zero stale IDs |
+| 5x parallel sessions | 1.94 s total |
+| MCP x50 tool calls | 11.5 s (~4.3/s serial) |
+| 5x repeat open (truncation guard) | byte-identical tree every run |
+
+### Soak / load test
+
+`scripts/soak.mjs` drives a long-running MCP session the way an agent would
+(open -> act -> scroll -> markdown -> screenshot) and watches for the failure
+modes that only show up after hours: memory growth, latency drift, error
+creep, and leaked browsers.
+
+```sh
+cargo build --release
+node scripts/soak.mjs --minutes 120 \
+  --url http://localhost:8099/ --url https://example.com \
+  --interval 300 --out soak-report.json
+```
+
+The run is **strictly sequential** (one tool call at a time) so it measures
+flashbrowse, not the machine. The report contains throughput, per-tool
+latency percentiles, first-tenth vs last-tenth drift, RSS of the flashbrowse
+process and of the browser, the orphan-browser count, and the error list.
+CI runs a 5-minute version of the same harness on every push.
+
+### What is blocked, and why
+
+Measured byte shares of a real page load (Chrome `Network.loadingFinished`):
+
+| resource | share | blocked? | why |
+|---|---|---|---|
+| JS | 9-55% | **no** | it hydrates the page we read - blocking it breaks everything |
+| images | 17-42% | **yes** | useless to an LLM agent, and the AX tree keeps the `alt` text either way |
+| fonts | 2-12% | **yes** | no rendering for us |
+| trackers | ~5% | **yes** | noise + latency |
+| CSS | **1-3%** (18% on HN) | **no** | see below |
+
+**`full-render` policy:** only trackers stay blocked; images and fonts load
+for faithful screenshots while the compressed AX tree stays the same size as
+agent-default.
+
+**Why CSS is not blocked:** `display:none` / `visibility:hidden` elements are
+excluded from the accessibility tree *because of CSS*. Measured on a local page:
+with CSS blocked, `SECRET HIDDEN CONTENT` (a `display:none` div) appears in the
+tree - content the user cannot see would be exposed to the agent, and the agent
+could click invisible elements. For 1-3% of bytes that is a bad trade.
+
+**Why images are blocked:** a blocked image still exposes its `alt` text as the
+accessible name (verified against Chromium 147), so the AX tree is unchanged -
+the page is just 20-40% lighter. `browser_screenshot` lifts the block for the
+capture so pixels are still real.
+
+### Why flashbrowse is faster (and still complete)
+
+Playwright/Puppeteer snapshot after `domcontentloaded` + 500 ms. That is fast
+because it can catch a half-rendered page - measured on Hacker News, a
+`domcontentloaded` snapshot yields **65 tokens instead of 1770**.
+
+flashbrowse waits for the tree to be *final*:
+
+1. cheap poll (one `Runtime.evaluate`) every 100 ms - `readyState`, DOM size,
+   `innerText` length;
+2. the DOM must be quiet (250 ms static / 600 ms moving / 800 ms for a small
+   tree that may not have hydrated);
+3. the browser must report `readyState == "complete"` (its own verdict that
+   every JS bundle has loaded) - or the network must be idle;
+4. the AX tree must not be obviously empty while the DOM has content
+   (Chromium fills the AX tree ~400 ms after the DOM is final);
+5. the AX content fingerprint must match the previous sample.
+
+The result is a tree that is complete **and** fast, and it does not depend on
+how fast the network is: the wait ends when the *browser* says the page is
+done. Repeated opens produce byte-identical trees (the truncation guard test
+asserts this), and a page that fails to render is reported as an error instead
+of an empty tree.
+
+### Where the rivals still win
+
+- Cross-browser (Firefox/WebKit), trace viewer, visual regression tooling.
+- Pixel-perfect rendering, WebGL, PDF, extensions - flashbrowse is an agent
+  layer on top of Chrome, not a replacement for it.
+- A one-off snapshot where a partially rendered page is acceptable.
+
+---
+
+## License
+
+Apache-2.0 - the same license as Playwright and Puppeteer. See `LICENSE`.

@@ -1,0 +1,25 @@
+[package]
+name = "flashbrowse-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "flashbrowse"
+path = "src/main.rs"
+
+[dependencies]
+flashbrowse-bidi = { path = "../flashbrowse-bidi" }
+flashbrowse-cdp = { path = "../flashbrowse-cdp" }
+flashbrowse-core = { path = "../flashbrowse-core" }
+flashbrowse-mcp = { path = "../flashbrowse-mcp" }
+tokio = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+reqwest = { workspace = true }
+zip = { workspace = true }
+futures-util = { workspace = true }

@@ -1,0 +1,205 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-test:
+    name: build + test (${{ matrix.os }})
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+
+      # --- browser provisioning -----------------------------------------
+      # The managed Chrome (~120 MB) is cached across runs, keyed by the
+      # exact Chrome-for-Testing stable version. A new Chrome release
+      # invalidates the key automatically (no stale browser, no manual
+      # cache busting). There is deliberately NO prefix fallback: serving
+      # an older Chrome would silently change what the tests exercise.
+      - name: Resolve Chrome-for-Testing stable version
+        id: cft
+        shell: bash
+        run: |
+          ver=$(curl -fsSL --retry 3 \
+            https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).channels.Stable.version;process.stdout.write(v)})')
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "Chrome-for-Testing stable: $ver"
+
+      - name: Restore managed Chrome cache
+        id: chrome-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.cache/flashbrowse/chrome
+            ~/Library/Caches/flashbrowse/chrome
+            ~/AppData/Local/flashbrowse/chrome
+          key: chrome-${{ matrix.os }}-${{ steps.cft.outputs.version }}
+
+      # `setup` is idempotent: with a warm cache it prints "already installed"
+      # and exits in milliseconds; on a miss it downloads and extracts.
+      - name: Provision managed Chrome
+        run: cargo run --release --bin flashbrowse -- setup
+        shell: bash
+
+      - name: Save managed Chrome cache
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/.cache/flashbrowse/chrome
+            ~/Library/Caches/flashbrowse/chrome
+            ~/AppData/Local/flashbrowse/chrome
+          key: chrome-${{ matrix.os }}-${{ steps.cft.outputs.version }}
+
+      - name: Verify browser provisioning
+        run: cargo run --release --bin flashbrowse -- doctor
+        shell: bash
+
+      - name: Doctor report (json)
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo run --release --bin flashbrowse -- doctor --json > "$RUNNER_TEMP/doctor.json"
+        shell: bash
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: doctor-report
+          path: ${{ runner.temp }}/doctor.json
+
+      - run: cargo test --workspace -- --nocapture
+
+  soak:
+    name: soak (5 min, linux)
+    # Short CI soak: proves the long-running soak harness in scripts/soak.mjs
+    # works on a clean runner (no leaked browsers, no drift, no errors).
+    # The full 1-2 h soak is run locally before a release, not in CI.
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Resolve Chrome-for-Testing stable version
+        id: cft
+        shell: bash
+        run: |
+          ver=$(curl -fsSL --retry 3 \
+            https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions.json \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const v=JSON.parse(s).channels.Stable.version;process.stdout.write(v)})')
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Restore managed Chrome cache
+        id: chrome-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/flashbrowse/chrome
+          key: chrome-ubuntu-latest-${{ steps.cft.outputs.version }}
+          lookup-only: true
+
+      - name: Provision managed Chrome
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        run: cargo run --release --bin flashbrowse -- setup
+        shell: bash
+
+      - name: Save managed Chrome cache
+        if: steps.chrome-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/.cache/flashbrowse/chrome
+          key: chrome-ubuntu-latest-${{ steps.cft.outputs.version }}
+
+      - run: cargo build --release --bin flashbrowse
+
+      - name: Start local fixture server
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/site"
+          cp crates/flashbrowse-core/tests/fixtures/*.html "$RUNNER_TEMP/site/"
+          cd "$RUNNER_TEMP/site"
+          python3 -m http.server 8099 &
+          echo $! > "$RUNNER_TEMP/server.pid"
+          sleep 2
+          curl -fsS http://localhost:8099/ > /dev/null
+
+      - name: Run soak
+        run: |
+          node scripts/soak.mjs \
+            --minutes 5 \
+            --url http://localhost:8099/ \
+            --url https://example.com \
+            --interval 200 \
+            --bin target/release/flashbrowse \
+            --out "$RUNNER_TEMP/soak-report.json"
+
+      - name: Stop fixture server
+        if: always()
+        shell: bash
+        run: |
+          [ -f "$RUNNER_TEMP/server.pid" ] && kill "$(cat "$RUNNER_TEMP/server.pid")" || true
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: soak-report
+          path: ${{ runner.temp }}/soak-report.json
+          if-no-files-found: warn
+
+  audit:
+    name: cargo audit
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-audit
+      - run: cargo audit
+
+  release-build:
+    name: release build (${{ matrix.target }})
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: macos-15, target: aarch64-apple-darwin }
+          - { os: macos-15-intel, target: x86_64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --target ${{ matrix.target }} --bin flashbrowse
+        shell: bash
+      - name: Verify binary runs (unix)
+        if: runner.os != 'Windows'
+        run: ./target/${{ matrix.target }}/release/flashbrowse --version
+      - name: Verify binary runs (windows)
+        if: runner.os == 'Windows'
+        run: ./target/${{ matrix.target }}/release/flashbrowse.exe --version
+        shell: bash

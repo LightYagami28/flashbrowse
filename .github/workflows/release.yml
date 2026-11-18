@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: x86_64-unknown-linux-gnu, asset: flashbrowse-linux-x86_64 }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu, asset: flashbrowse-linux-aarch64 }
+          - { os: macos-15, target: aarch64-apple-darwin, asset: flashbrowse-macos-aarch64 }
+          - { os: macos-15-intel, target: x86_64-apple-darwin, asset: flashbrowse-macos-x86_64 }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc, asset: flashbrowse-windows-x86_64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --target ${{ matrix.target }} --bin flashbrowse
+        shell: bash
+      - name: Sign macOS binary (ad-hoc, optional)
+        if: runner.os == 'macOS'
+        run: |
+          # Ad-hoc signature only: it satisfies the "signed" part of
+          # Gatekeeper for locally built binaries and costs nothing.
+          # Notarization is NOT required for our install path (curl / npm /
+          # cargo install never set the quarantine attribute) - see
+          # RELEASE.md for the details and the optional Developer ID flow.
+          codesign --force --options runtime --sign - target/${{ matrix.target }}/release/flashbrowse
+      - name: Package (unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p dist
+          cp target/${{ matrix.target }}/release/flashbrowse dist/
+          cp README.md install.sh dist/
+          tar -czf ${{ matrix.asset }}.tar.gz -C dist flashbrowse README.md install.sh
+      - name: Package (windows)
+        if: runner.os == 'Windows'
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/flashbrowse.exe" "dist/flashbrowse.exe"
+          Copy-Item README.md, install.ps1 -Destination dist/
+          Compress-Archive -Path dist\* -DestinationPath "${{ matrix.asset }}.zip"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}.*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v3
+        with:
+          files: "*.tar.gz\n*.zip"
+          draft: false
+          prerelease: false

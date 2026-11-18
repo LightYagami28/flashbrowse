@@ -1,0 +1,149 @@
+//! `Accessibility` domain types (getFullAXTree, AXNode, AXValue).
+//!
+//! Field names mirror the CDP `Accessibility.AXNode` schema exactly:
+//! `nodeId, ignored, ignoredReasons, role, chromeRole, name, description,
+//!  value, properties, parentId, childIds, backendDOMNodeId, frameId`.
+
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+
+use crate::error::CdpError;
+use crate::transport::CdpClient;
+
+/// AXTree node value. CDP reuses `{type, value}` pairs; `value` is untyped.
+#[derive(Debug, Clone, Deserialize)]
+pub struct AXValue {
+    #[serde(rename = "type", default)]
+    pub type_: Option<String>,
+    #[serde(default)]
+    pub value: Option<Value>,
+}
+
+impl AXValue {
+    /// String payload (`value` may be string/number/bool).
+    pub fn as_text(&self) -> String {
+        match self.value.as_ref() {
+            None | Some(Value::Null) => String::new(),
+            Some(Value::String(s)) => s.clone(),
+            Some(Value::Number(n)) => n.to_string(),
+            Some(Value::Bool(b)) => b.to_string(),
+            Some(other) => other.to_string(),
+        }
+    }
+
+    /// Boolean payload (`true` only for a literal `true`).
+    pub fn as_bool(&self) -> bool {
+        matches!(self.value.as_ref(), Some(Value::Bool(true)))
+    }
+
+    /// Integer payload.
+    pub fn as_i64(&self) -> Option<i64> {
+        match self.value.as_ref() {
+            Some(Value::Number(n)) => n.as_i64(),
+            Some(Value::String(s)) => s.parse::<i64>().ok(),
+            _ => None,
+        }
+    }
+}
+
+/// AXTree node property (states like `level`, `checked`, `disabled`, `value`).
+#[derive(Debug, Clone, Deserialize)]
+pub struct AXProperty {
+    pub name: String,
+    #[serde(default)]
+    pub value: Option<AXValue>,
+}
+
+/// Reason a node was excluded from the AX tree.
+#[derive(Debug, Clone, Deserialize)]
+pub struct AXIgnoredReason {
+    pub name: String,
+    #[serde(default)]
+    pub value: Option<AXValue>,
+}
+
+/// Single accessibility-tree node returned by `Accessibility.getFullAXTree`.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AXNode {
+    pub node_id: String,
+    #[serde(default)]
+    pub ignored: bool,
+    #[serde(default)]
+    pub role: Option<AXValue>,
+    #[serde(default)]
+    pub name: Option<AXValue>,
+    /// Node value (input value, selected option text, ...).
+    #[serde(default)]
+    pub value: Option<AXValue>,
+    /// CDP sends `backendDOMNodeId` (not camelCase).
+    #[serde(rename = "backendDOMNodeId", alias = "backendNodeId", default)]
+    pub backend_node_id: Option<i64>,
+    #[serde(default)]
+    pub child_ids: Vec<String>,
+    #[serde(default)]
+    pub ignored_reasons: Option<Vec<AXIgnoredReason>>,
+    #[serde(default)]
+    pub properties: Option<Vec<AXProperty>>,
+}
+
+impl AXNode {
+    /// Property lookup by name.
+    pub fn property(&self, name: &str) -> Option<&AXProperty> {
+        self.properties.as_ref()?.iter().find(|p| p.name == name)
+    }
+
+    /// Boolean property value.
+    pub fn prop_bool(&self, name: &str) -> bool {
+        self.property(name)
+            .and_then(|p| p.value.as_ref())
+            .map(|v| v.as_bool())
+            .unwrap_or(false)
+    }
+
+    /// String property value.
+    pub fn prop_string(&self, name: &str) -> Option<String> {
+        self.property(name)
+            .and_then(|p| p.value.as_ref())
+            .map(|v| v.as_text())
+            .filter(|s| !s.is_empty())
+    }
+
+    /// Integer property value.
+    pub fn prop_i64(&self, name: &str) -> Option<i64> {
+        self.property(name)
+            .and_then(|p| p.value.as_ref())
+            .and_then(|v| v.as_i64())
+    }
+}
+
+/// Params for `Accessibility.getFullAXTree`.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetFullAXTreeParams {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub depth: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_depth: Option<i32>,
+}
+
+/// Response of `Accessibility.getFullAXTree`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetFullAXTreeResponse {
+    pub nodes: Vec<AXNode>,
+}
+
+/// `Accessibility.getFullAXTree` - the compression engine input.
+pub async fn get_full_ax_tree(
+    client: &CdpClient,
+    session_id: &str,
+) -> Result<GetFullAXTreeResponse, CdpError> {
+    client
+        .send_typed(
+            Some(session_id),
+            "Accessibility.getFullAXTree",
+            &GetFullAXTreeParams::default(),
+        )
+        .await
+}

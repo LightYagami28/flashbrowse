@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>flashbrowse fixture - forms, tables, and links</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; line-height: 1.5; }
+      table { border-collapse: collapse; margin: 1rem 0; }
+      th, td { border: 1px solid #ccc; padding: 0.4rem 0.7rem; text-align: left; }
+      th { background: #f4f4f4; }
+      label { display: block; margin: 0.6rem 0 0.2rem; }
+      input, select, textarea { padding: 0.35rem; min-width: 18rem; }
+      button { padding: 0.45rem 1rem; margin-top: 0.8rem; }
+      .note { color: #555; font-size: 0.9rem; }
+    </style>
+  </head>
+  <body>
+    <h1>flashbrowse fixture</h1>
+    <p class="note">
+      Deterministic page used by the soak harness and by CI. It exercises
+      headings, links, form controls, a table, and a long scroll region.
+    </p>
+
+    <h2>Search</h2>
+    <form onsubmit="event.preventDefault(); document.getElementById('out').textContent = 'submitted: ' + document.getElementById('q').value;">
+      <label for="q">Query</label>
+      <input id="q" name="q" type="text" placeholder="type here" />
+      <label for="kind">Kind</label>
+      <select id="kind" name="kind">
+        <option value="all">All</option>
+        <option value="docs">Docs</option>
+        <option value="issues">Issues</option>
+      </select>
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes" rows="3"></textarea>
+      <button type="submit" id="submit">Submit</button>
+    </form>
+    <p id="out" data-role="output">idle</p>
+
+    <h2>Links</h2>
+    <ul>
+      <li><a href="/docs">Documentation</a></li>
+      <li><a href="/issues">Issue tracker</a></li>
+      <li><a href="https://example.com">External example</a></li>
+      <li><a href="/about">About this fixture</a></li>
+    </ul>
+
+    <h2>Table</h2>
+    <table id="rows">
+      <thead>
+        <tr><th>ID</th><th>Name</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>alpha</td><td>ok</td></tr>
+        <tr><td>2</td><td>beta</td><td>ok</td></tr>
+        <tr><td>3</td><td>gamma</td><td>pending</td></tr>
+        <tr><td>4</td><td>delta</td><td>ok</td></tr>
+        <tr><td>5</td><td>epsilon</td><td>failed</td></tr>
+        <tr><td>6</td><td>zeta</td><td>ok</td></tr>
+        <tr><td>7</td><td>eta</td><td>ok</td></tr>
+        <tr><td>8</td><td>theta</td><td>pending</td></tr>
+        <tr><td>9</td><td>iota</td><td>ok</td></tr>
+        <tr><td>10</td><td>kappa</td><td>ok</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Long content</h2>
+    <div id="filler">
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+      <p>Scroll region filler paragraph. This text exists so the page has enough height to make scrolling a meaningful action.</p>
+    </div>
+
+    <h2>Visual assets</h2>
+    <p>Screenshot regression: inline image and lazy below-fold image.</p>
+    <img id="hero" width="120" height="40" alt="inline fixture badge"
+      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAFUlEQVR42mP8z8BQz0AEYBxVSF+FABJADveWkH6aAAAAAElFTkSuQmCC" />
+    <img id="lazy-shot" loading="lazy" width="200" height="80" alt="lazy marker"
+      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAYAAAD5eNT6AAAAEklEQVQImWNgYGBgYGAEAAaUAQAJhAFfAAAAAElFTkSuQmCC"
+      style="margin-top: 120vh;" />
+
+    <h2>Footer</h2>
+    <p><a href="/footer-link">Footer link</a></p>
+  </body>
+</html>

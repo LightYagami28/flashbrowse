@@ -1,0 +1,174 @@
+# Changelog - flashbrowse
+
+All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+
+## [Unreleased]
+
+### Added
+- `ResourcePolicy` for network blocking: `agent-default` (default), `text-only`,
+  `full-render` (loads images/fonts; tree tokens unchanged). CLI:
+  `--resource-policy`, `--full-render` (conflicts with `--text-only`), env
+  `FLASHBROWSE_RESOURCE_POLICY`.
+- Trustworthy `browser_screenshot`: lifts fonts and images during prepare,
+  network-idle wait, lazy-content scroll, configurable `timeout_ms` / MCP
+  `prepare_lazy_content`. Use the same flashbrowse session instead of a second
+  browser MCP.
+- MCP `browser_open` accepts `resource_policy`; tool descriptions steer agents
+  to `browser_screenshot` on the active session.
+- `CdpDriver` seam in `flashbrowse-core` for future engines.
+- `flashbrowse-bidi` crate: Firefox binary discovery (`find_firefox`, doctor
+  informational check); full BiDi sessions are not wired yet.
+
+### Fixed
+- `browser_screenshot` no longer burns the full prepare timeout on a page whose
+  images are blocked. The readiness check required `naturalWidth > 0`, which a
+  permanently broken image never reaches; it now waits on `img.complete`
+  (loaded *or* failed). A screenshot of an image-bearing page went from
+  ~8.2 s to ~0.4 s.
+- Blocked images are now actually rendered. Lifting the blocklist alone did
+  nothing: `Network.setBlockedURLs` only affects *future* requests and Chrome
+  never retries a blocked one. The capture now re-requests the images, so an
+  agent-default screenshot shows the same pixels as a `full-render` one.
+- The screenshot prepare no longer resets the scroll position. The agent asked
+  for a picture of what it was looking at; the viewport is now restored after
+  the lazy-content scroll.
+- The screenshot prepare timeout is capped (500 ms - 60 s). An agent could
+  previously ask for an unbounded wait and pin the serial MCP server.
+- An invalid MCP `resource_policy` is now an `InvalidParams` error instead of
+  being silently ignored (the CLI already rejected it).
+- Resource-policy flag precedence is explicit and deterministic:
+  `--resource-policy` > `--full-render`/`--text-only` > env > default.
+  Conflicting flags now fail loudly.
+- `doctor` no longer spawns `firefox --version`; it only reports the path.
+- Plain text in generic containers (`<div>`, `<span>`) is no longer dropped.
+  Chromium gives every `StaticText` an `InlineTextBox` child; treating that as
+  "has children, so it is a concatenation duplicate" made the compressor drop
+  every piece of plain text on the page. `InlineTextBox` is now recognized as
+  layout scaffolding, and `StaticText` renders as a `Text:` line.
+- A minimal page (one or two semantic nodes) no longer waits out the whole
+  15 s settle deadline: the exit condition required `nodes.len() >= 3`, which
+  a tiny page never reaches. Such pages now open in ~0.6 s instead of ~16 s.
+- The `Title:` header no longer comes up blank about one page in five. The
+  title was read right after `navigate`, before the new document was parsed;
+  it is now re-read once the page has settled.
+- Content arriving shortly after `readyState == "complete"` (hydration
+  timers up to ~1.2 s) is no longer truncated: the small-tree quiet window
+  grew from 800 ms to 1200 ms.
+
+## [1.0.1] - 2026-11-14
+
+### Added
+- **Observability**: every CLI command and every MCP tool call appends a
+  record to `~/.cache/flashbrowse/metrics.jsonl` (op, target, duration, agent
+  payload tokens, action count, ok/error).
+- `flashbrowse stats [--limit N] [--json]`: latency percentiles (p50/p95),
+  token totals, action averages and error rate over the metrics trail.
+- `flashbrowse doctor [--json]`: environment diagnostics (Chromium presence
+  and version, managed Chrome, cache-dir writability, free temp space,
+  available memory, stored sessions, orphaned browser processes). Exits `1`
+  when a blocking check fails.
+- `flashbrowse update [--check]`: update-channel aware release check.
+  Channel selected via `FLASHBROWSE_UPDATE_CHANNEL` = `stable` (default) |
+  `beta` | `nightly` | `off`.
+- `--log-format text|json` global flag: JSON logs are one object per line,
+  ready for a log shipper. Logs always go to stderr (stdout stays pure
+  JSON-RPC for MCP).
+- `scripts/soak.mjs`: soak/load harness that drives a long-running MCP
+  session and reports throughput, per-tool latency, first-tenth vs
+  last-tenth drift, RSS growth, orphan-browser count and error list. CI runs
+  a 5-minute version on every push.
+- CI caches the managed Chrome-for-Testing download, keyed by the exact
+  Chrome version, so the browser is fetched once instead of once per job.
+- `FLASHBROWSE_CHROME_VERSION` pins the Chrome-for-Testing version used by
+  `flashbrowse setup`.
+- CDP `dispatch_frame` unit tests; WebSocket connect retries on early Chrome
+  startup races.
+- Soak exit checks for latency drift (> 1.2x) and flashbrowse RSS growth
+  (> 1.5x).
+- CI uploads `doctor --json` on Linux.
+
+### Fixed (accuracy)
+- **Table contents are no longer dropped.** Table rows are now emitted as one
+  line per row (`a | b | c`) instead of one line per cell, and the row's own
+  accessible name (empty in Chromium) no longer hides the cell text.
+- **List item text is no longer dropped.** A `listitem` keeps its text.
+- **Output is in document order.** Chromium returns the accessibility tree
+  breadth-first, which interleaved siblings with their descendants (a table
+  header row could arrive after its body rows). The compressor now rebuilds
+  the tree and walks it depth-first.
+- An actionable element inside a container no longer causes its text to be
+  emitted twice.
+- `listmarker` bullet glyphs are dropped (decoration, not content).
+- Unnamed links no longer occupy action IDs in the action map when dropped.
+
+### Fixed
+- `doctor` memory and orphan-browser checks on macOS and Windows.
+- Metrics `record_op` for `setup`, `close`, `bench`, and failed `act` paths.
+- CI soak job Chrome cache key (`ubuntu-latest`, not empty `matrix.os`).
+
+### Changed
+- License is **Apache-2.0** (the same license as Playwright and Puppeteer).
+  `LICENSE` added; `Cargo.toml` and the README updated.
+
+## [1.0.0] - 2026-11-14
+
+First public release. Single Rust binary, zero Python/Node/JVM, raw CDP over
+WebSocket, AXTree-first compression, native MCP stdio server.
+
+### Added
+- `flashbrowse setup`: managed Chrome-for-Testing download
+  (`~/.cache/flashbrowse/chrome/`, ~120 MB, once) - no manual Chrome install.
+- MCP stdio server (protocol 2025-06-18, falls back to 2025-03-26 / 2024-11-05)
+  with four tools: `browser_open`, `browser_act`, `browser_extract_markdown`,
+  `browser_screenshot`.
+- CLI: `mcp`, `open`, `act`, `dump`, `bench`, `setup`, `close` with
+  `--chrome-path`, `--text-only`, `--session-id` persistence.
+- `select` action (combobox/dropdown) via `DOM.resolveNode` +
+  `Runtime.callFunctionOn` - never opens the native popup.
+- Actionability checks for clicks (visible + stable, Playwright parity).
+- Adaptive settle engine: cheap DOM polling, network-idle gate, AX-vs-DOM
+  readiness gate and content-fingerprint verification, so the tree is never
+  truncated (byte-identical output across repeated opens).
+- Network interception: fonts, trackers and images blocked by default
+  (image `alt` text survives in the AX tree); CSS deliberately not blocked.
+- Stealth script: `navigator.webdriver`, `window.chrome`, plugins, mimeTypes,
+  languages, platform/vendor, CPU/memory, permissions, WebGL masking.
+- One-script installers (`install.sh`, `install.ps1`), CI on Linux/macOS/Windows,
+  release workflow for 5 targets.
+
+### Fixed (correctness)
+- `AXNode` now matches the CDP schema exactly (`nodeId`, `backendDOMNodeId`,
+  `value`, `ignoredReasons`, `properties`) - the old mapping silently dropped
+  every action ID.
+- Heading levels read from `properties` (was always 1).
+- macOS select-all uses Cmd (Meta=4), not Shift (8).
+- Key events send the DOM `code` (`a` -> `KeyA`).
+- A malformed `tools/call` no longer terminates the MCP server.
+- Stealth and network blocking are re-applied on session re-attach (they are
+  per-`sessionId` settings).
+- `select` no longer leaves the native dropdown open.
+- Profile directories are removed reliably (synchronously, not in a thread
+  that process exit could kill).
+- `close` verifies the pid still belongs to Chrome before killing it; corrupt
+  session files are cleaned instead of blocking cleanup.
+- Invalid session ids are rejected before detaching (no orphaned browser).
+- Oversize CDP frames fail their pending calls instead of timing out.
+
+### Performance
+- 3x - 23x fewer agent tokens than Playwright/Puppeteer accessibility
+  snapshots (measured against the full tree, `interestingOnly: false`).
+- 1.08x - 1.10x faster than Playwright/Puppeteer on the agent loop
+  (524 ms vs 564/579 ms median, local page, same Chrome).
+- 98.8% token reduction on a 50k-node synthetic AX tree (182 ms).
+- 234 ms average for 20 sequential opens, 286 ms for a 100-action storm.
+
+> The agent payload grew from 813 to 1215 tokens on the local benchmark page
+> because the compressor stopped dropping table cells. The old number was
+> smaller because the data was missing.
+
+### Known limits (documented in README)
+- Stealth defeats naive bots, not canvas/audio/TLS fingerprinting.
+- MCP `browser_open` is URL-allowlisted (`http`, `https`, `data`, `about:blank`).
+- Markdown extraction is lightweight, not a full Readability port.
+- macOS/Windows binaries are ad-hoc signed; notarization needs an Apple
+  Developer certificate (see `RELEASE.md`).
