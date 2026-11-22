@@ -4,6 +4,8 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-22
+
 ### Added
 - `ResourcePolicy` for network blocking: `agent-default` (default), `text-only`,
   `full-render` (loads images/fonts; tree tokens unchanged). CLI:
@@ -18,8 +20,36 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 - `CdpDriver` seam in `flashbrowse-core` for future engines.
 - `flashbrowse-bidi` crate: Firefox binary discovery (`find_firefox`, doctor
   informational check); full BiDi sessions are not wired yet.
+- **Observability**: every CLI command and every MCP tool call appends a
+  record to `~/.cache/flashbrowse/metrics.jsonl` (op, target, duration, agent
+  payload tokens, action count, ok/error).
+- `flashbrowse stats [--limit N] [--json]`: latency percentiles (p50/p95),
+  token totals, action averages and error rate over the metrics trail.
+- `flashbrowse doctor [--json]`: environment diagnostics (Chromium presence
+  and version, managed Chrome, cache-dir writability, free temp space,
+  available memory, stored sessions, orphaned browser processes). Exits `1`
+  when a blocking check fails.
+- `flashbrowse update [--check]`: update-channel aware release check.
+  Channel selected via `FLASHBROWSE_UPDATE_CHANNEL` = `stable` (default) |
+  `beta` | `nightly` | `off`.
+- `--log-format text|json` global flag: JSON logs are one object per line,
+  ready for a log shipper. Logs always go to stderr (stdout stays pure
+  JSON-RPC for MCP).
+- `scripts/soak.mjs`: soak/load harness that drives a long-running MCP
+  session and reports throughput, per-tool latency, first-tenth vs
+  last-tenth drift, RSS growth, orphan-browser count and error list. CI runs
+  a 5-minute version on every push.
+- CI caches the managed Chrome-for-Testing download, keyed by the exact
+  Chrome version, so the browser is fetched once instead of once per job.
+- `FLASHBROWSE_CHROME_VERSION` pins the Chrome-for-Testing version used by
+  `flashbrowse setup`.
+- CDP `dispatch_frame` unit tests; WebSocket connect retries on early Chrome
+  startup races.
+- Soak exit checks for latency drift (> 1.2x) and flashbrowse RSS growth
+  (> 1.5x).
+- CI uploads `doctor --json` on Linux.
 
-### Fixed
+### Fixed (screenshot, policy, navigation)
 - `browser_screenshot` no longer burns the full prepare timeout on a page whose
   images are blocked. The readiness check required `naturalWidth > 0`, which a
   permanently broken image never reaches; it now waits on `img.complete`
@@ -55,38 +85,6 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
   timers up to ~1.2 s) is no longer truncated: the small-tree quiet window
   grew from 800 ms to 1200 ms.
 
-## [1.0.1] - 2026-11-14
-
-### Added
-- **Observability**: every CLI command and every MCP tool call appends a
-  record to `~/.cache/flashbrowse/metrics.jsonl` (op, target, duration, agent
-  payload tokens, action count, ok/error).
-- `flashbrowse stats [--limit N] [--json]`: latency percentiles (p50/p95),
-  token totals, action averages and error rate over the metrics trail.
-- `flashbrowse doctor [--json]`: environment diagnostics (Chromium presence
-  and version, managed Chrome, cache-dir writability, free temp space,
-  available memory, stored sessions, orphaned browser processes). Exits `1`
-  when a blocking check fails.
-- `flashbrowse update [--check]`: update-channel aware release check.
-  Channel selected via `FLASHBROWSE_UPDATE_CHANNEL` = `stable` (default) |
-  `beta` | `nightly` | `off`.
-- `--log-format text|json` global flag: JSON logs are one object per line,
-  ready for a log shipper. Logs always go to stderr (stdout stays pure
-  JSON-RPC for MCP).
-- `scripts/soak.mjs`: soak/load harness that drives a long-running MCP
-  session and reports throughput, per-tool latency, first-tenth vs
-  last-tenth drift, RSS growth, orphan-browser count and error list. CI runs
-  a 5-minute version on every push.
-- CI caches the managed Chrome-for-Testing download, keyed by the exact
-  Chrome version, so the browser is fetched once instead of once per job.
-- `FLASHBROWSE_CHROME_VERSION` pins the Chrome-for-Testing version used by
-  `flashbrowse setup`.
-- CDP `dispatch_frame` unit tests; WebSocket connect retries on early Chrome
-  startup races.
-- Soak exit checks for latency drift (> 1.2x) and flashbrowse RSS growth
-  (> 1.5x).
-- CI uploads `doctor --json` on Linux.
-
 ### Fixed (accuracy)
 - **Table contents are no longer dropped.** Table rows are now emitted as one
   line per row (`a | b | c`) instead of one line per cell, and the row's own
@@ -105,6 +103,21 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 - `doctor` memory and orphan-browser checks on macOS and Windows.
 - Metrics `record_op` for `setup`, `close`, `bench`, and failed `act` paths.
 - CI soak job Chrome cache key (`ubuntu-latest`, not empty `matrix.os`).
+- The Windows build did not compile: `tokio::signal::unix` was called
+  unconditionally, so `cargo build` and clippy died with E0433 and a cascading
+  E0599. Signal handling is now unix-only, with console Ctrl+C on Windows;
+  `libc` is a unix-only dependency and the `ps`-only orphan scan helper is
+  gated so clippy `-D warnings` passes on every OS.
+- An explicit Firefox path is authoritative. `find_firefox(Some(p))` used to
+  fall back to PATH when `p` did not exist, which silently ran a different
+  browser than the caller pinned.
+
+### Security
+- `zip` 4.6.1 carried six advisories (RUSTSEC-2026-0429, -0367, -0548,
+  -0368, -0369, -0545). Upgraded to 9.8.1 with only the deflate feature
+  enabled, since Chrome-for-Testing archives are deflate/store and the AES,
+  LZMA, Zstd, bzip2 and ppmd decoders were never exercised. `cargo audit` is
+  clean.
 
 ### Changed
 - License is **Apache-2.0** (the same license as Playwright and Puppeteer).
