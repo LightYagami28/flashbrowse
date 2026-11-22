@@ -35,6 +35,11 @@ pub fn find_firefox(explicit: Option<&PathBuf>) -> Result<PathBuf, FirefoxNotAva
         if p.is_file() {
             return Ok(p.clone());
         }
+        // An explicit path is authoritative. Falling back to PATH here would
+        // silently run a different Firefox than the caller asked for, and it
+        // made the result depend on whether the host happens to have Firefox
+        // installed (it does on CI runners, not on a dev box).
+        return Err(FirefoxNotAvailable { searched });
     }
     if let Ok(env) = std::env::var("FIREFOX_PATH") {
         let p = PathBuf::from(&env);
@@ -90,6 +95,9 @@ mod tests {
     #[test]
     fn find_firefox_err_when_missing() {
         let err = find_firefox(Some(&PathBuf::from("/nonexistent/firefox"))).unwrap_err();
-        assert!(!err.searched.is_empty());
+        // Only the explicit path may be searched: a fallback to PATH would
+        // return the host's Firefox (present on CI, absent on many dev
+        // machines) and make this test depend on the machine.
+        assert_eq!(err.searched, vec!["/nonexistent/firefox".to_string()]);
     }
 }

@@ -385,7 +385,6 @@ dependencies = [
 name = "flashbrowse-core"
 version = "1.0.1"
 dependencies = [
- "anyhow",
  "async-trait",
  "dashmap",
  "flashbrowse-cdp",
@@ -402,7 +401,6 @@ dependencies = [
 name = "flashbrowse-mcp"
 version = "1.0.1"
 dependencies = [
- "anyhow",
  "flashbrowse-cdp",
  "flashbrowse-core",
  "serde",
