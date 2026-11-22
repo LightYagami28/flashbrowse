@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use flashbrowse_cdp::protocol::runtime;
 use flashbrowse_core::observability;
-use flashbrowse_core::{BrowserSession, ResourcePolicy, SessionConfig};
+use flashbrowse_core::{normalize_url, BrowserSession, ResourcePolicy, SessionConfig};
 
 /// Standard default targets (kept network-minimal for CI speed).
 const DEFAULT_URLS: &[&str] = &["https://example.com"];
@@ -44,6 +44,28 @@ pub async fn run(
         DEFAULT_URLS.iter().map(|s| s.to_string()).collect()
     } else {
         urls
+    };
+    // Resolve every target before the first browser launches: a typo should
+    // fail once, not once per row after paying for a browser each time.
+    let targets: Vec<String> = match targets
+        .iter()
+        .map(|u| normalize_url(u))
+        .collect::<Result<Vec<_>, _>>()
+    {
+        Ok(resolved) => resolved,
+        Err(e) => {
+            // Record the failure like `open` and `dump` do: every operation
+            // must leave a trace in metrics.jsonl.
+            observability::record_op(
+                "bench",
+                &targets.join(","),
+                started,
+                None,
+                false,
+                Some(e.to_string()),
+            );
+            return Err(anyhow::anyhow!("{e}"));
+        }
     };
 
     println!(

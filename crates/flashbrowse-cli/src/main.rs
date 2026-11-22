@@ -70,7 +70,8 @@ enum Commands {
     Mcp,
     /// Open a URL and display the token-compressed action tree.
     Open {
-        /// Target URL.
+        /// Target URL. The scheme may be omitted: https is assumed, and local
+        /// hosts (localhost, 127.0.0.1, LAN addresses) use http.
         url: String,
         /// Keep the browser alive for `act` (session id).
         #[arg(long)]
@@ -92,7 +93,8 @@ enum Commands {
     },
     /// Extract clean content (Markdown or raw AXTree) from a URL.
     Dump {
-        /// Target URL.
+        /// Target URL. The scheme may be omitted: https is assumed, and local
+        /// hosts (localhost, 127.0.0.1, LAN addresses) use http.
         url: String,
         /// Output format.
         #[arg(long, default_value = "markdown")]
@@ -100,7 +102,8 @@ enum Commands {
     },
     /// Run token and latency benchmarks against targets.
     Bench {
-        /// URLs to benchmark (defaults to `https://example.com`).
+        /// URLs to benchmark (defaults to `https://example.com`). The scheme
+        /// may be omitted: https is assumed, and local hosts use http.
         urls: Vec<String>,
     },
     /// Download managed Chrome-for-Testing (no manual install needed).

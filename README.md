@@ -90,6 +90,15 @@ Global flags: `--chrome-path <p>`, `--text-only`, `--full-render`,
 `--resource-policy agent-default|text-only|full-render`, `--verbose`,
 `--log-format text|json`.
 
+The scheme is optional, like an address bar: `flashbrowse open example.com`
+uses `https://`, while local hosts (`localhost:3000`, `127.0.0.1`, `::1`,
+`*.local`, RFC1918 addresses) use `http://` because a dev server is plain HTTP
+in practice. An explicit scheme is never rewritten. Anything that cannot be a
+URL (a search query, a bare path) fails with the fix in the message instead of
+a CDP error. `dump` and `bench` resolve the same way. MCP `browser_open`
+resolves the same way too, then still applies its allowlist (`http`, `https`,
+`data`, `about:blank`; `file://` stays CLI-only).
+
 Precedence: `--resource-policy` > `--full-render` / `--text-only` >
 `FLASHBROWSE_RESOURCE_POLICY` > `agent-default`. Conflicting flags fail
 loudly rather than silently picking one.

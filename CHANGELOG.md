@@ -4,6 +4,19 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+### Added
+- `open`, `dump`, `bench` and MCP `browser_open` accept a scheme-less URL.
+  `flashbrowse open example.com` now works like an address bar: `https://` is
+  assumed, local hosts (`localhost:3000`, `127.0.0.1`, `::1`, `*.local`,
+  RFC1918 and link-local addresses) use `http://`, and an explicit scheme is
+  never rewritten. Before this, a bare host reached `Page.navigate` verbatim
+  and Chrome answered `-32000: Cannot navigate to invalid URL`.
+- Input that cannot be a URL now fails before a browser launches, with the fix
+  in the message: a bare path suggests `file:///`, a search query says
+  flashbrowse opens URLs, and an unsupported scheme (`javascript:`,
+  `mailto:`) is named. The MCP allowlist still runs on the normalized URL, so
+  `file://` remains CLI-only.
+
 ## [1.0.1] - 2026-11-22
 
 ### Added

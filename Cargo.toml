@@ -28,6 +28,7 @@ which = "7.0"
 dashmap = "6.1"
 regex = "1.11"
 async-trait = "0.1"
+url = "2.5"
 
 [workspace.package]
 version = "1.0.1"

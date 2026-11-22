@@ -17,6 +17,7 @@ pub mod resource_policy;
 pub mod session;
 pub mod stealth;
 pub mod tree;
+pub mod url_norm;
 
 pub use engine::BrowserEngine;
 pub use resource_policy::ResourcePolicy;
@@ -25,3 +26,4 @@ pub use session::{
     SCREENSHOT_PREPARE_MS_DEFAULT, SCREENSHOT_PREPARE_MS_MAX,
 };
 pub use tree::{ActionMap, SemanticNode};
+pub use url_norm::{normalize_url, UrlError};

@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use flashbrowse_core::actions::ScrollDirection;
 use flashbrowse_core::{
-    BrowserSession, ResourcePolicy, ScreenshotOptions, SessionConfig,
+    normalize_url, BrowserSession, ResourcePolicy, ScreenshotOptions, SessionConfig,
     SCREENSHOT_PREPARE_MS_DEFAULT, SCREENSHOT_PREPARE_MS_MAX,
 };
 use serde_json::Value;
@@ -30,7 +30,7 @@ pub fn tool_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "url": {"type": "string", "description": "Target HTTP/HTTPS or file URL"},
+                    "url": {"type": "string", "description": "Target URL. The scheme may be omitted: https is assumed, and local hosts (localhost, 127.0.0.1, LAN addresses) use http. Allowed schemes: http, https, data, about:blank"},
                     "text_only": {"type": "boolean", "description": "Legacy: selects text-only resource policy", "default": false},
                     "resource_policy": {"type": "string", "enum": ["agent-default", "text-only", "full-render"], "description": "Network load policy (tree size unchanged); full-render loads images/fonts for faithful screenshots"}
                 },
@@ -236,6 +236,10 @@ fn record_tool_metric(
 /// MCP URL allowlist (H4 fix): agent boundary must not read local files.
 /// Only `http(s)://`, `data:`, and `about:blank` are navigable via MCP.
 /// CLI commands keep full `file://` support (local-user trust boundary).
+///
+/// Expects an already-normalized URL: `resolve_mcp_url` adds the scheme for a
+/// bare host first, so the shorthand `example.com` is judged as the
+/// `https://example.com` it becomes rather than rejected for having no scheme.
 fn validate_mcp_url(url: &str) -> Result<(), McpError> {
     let t = url.trim();
     if t.is_empty() {
@@ -260,13 +264,24 @@ fn validate_mcp_url(url: &str) -> Result<(), McpError> {
     )))
 }
 
+/// Resolve a caller's URL, then apply the MCP allowlist to the result.
+///
+/// Order matters: normalizing first means `example.com` is checked as
+/// `https://example.com`, while `file:///etc/passwd` keeps its scheme and is
+/// still rejected by the allowlist.
+fn resolve_mcp_url(raw: &str) -> Result<String, McpError> {
+    let url = normalize_url(raw).map_err(|e| McpError::InvalidParams(e.to_string()))?;
+    validate_mcp_url(&url)?;
+    Ok(url)
+}
+
 async fn call_open(
     arguments: &Value,
     handle: &SessionHandle,
     default_config: &SessionConfig,
 ) -> Result<ToolResult, McpError> {
-    let url = arg_string(arguments, "url")?;
-    validate_mcp_url(&url)?;
+    let raw = arg_string(arguments, "url")?;
+    let url = resolve_mcp_url(&raw)?;
     let policy = arg_resource_policy(arguments, default_config)?;
     let mut guard = ensure_session(handle, default_config, policy).await?;
     let session = require_session(&mut guard)?;
@@ -398,5 +413,53 @@ async fn call_screenshot(
             Ok(data) => Ok(ToolResult::image(data)),
             Err(e) => Ok(ToolResult::error(e.to_string())),
         },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bare_host_is_resolved_then_allowed() {
+        assert_eq!(
+            resolve_mcp_url("example.com").unwrap(),
+            "https://example.com"
+        );
+        assert_eq!(
+            resolve_mcp_url("localhost:8099").unwrap(),
+            "http://localhost:8099"
+        );
+    }
+
+    #[test]
+    fn file_urls_are_still_rejected() {
+        // The allowlist runs on the normalized value, so an explicit file
+        // scheme survives normalization and is refused here.
+        assert!(resolve_mcp_url("file:///etc/passwd").is_err());
+    }
+
+    #[test]
+    fn paths_and_schemes_without_a_host_are_rejected() {
+        // A bare path never becomes a URL, so it cannot slip through as
+        // `https://` + path.
+        assert!(resolve_mcp_url("/etc/passwd").is_err());
+        assert!(resolve_mcp_url("../secret").is_err());
+        assert!(resolve_mcp_url("javascript:alert(1)").is_err());
+    }
+
+    #[test]
+    fn data_and_about_blank_still_work() {
+        assert_eq!(
+            resolve_mcp_url("data:text/html,<b>x</b>").unwrap(),
+            "data:text/html,<b>x</b>"
+        );
+        assert_eq!(resolve_mcp_url("about:blank").unwrap(), "about:blank");
+    }
+
+    #[test]
+    fn allowlist_still_rejects_other_schemes() {
+        // A scheme the allowlist does not know, with a host, is refused.
+        assert!(resolve_mcp_url("ftp://example.com").is_err());
     }
 }

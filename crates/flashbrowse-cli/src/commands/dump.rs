@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use flashbrowse_core::{BrowserSession, ResourcePolicy, SessionConfig};
+use flashbrowse_core::{normalize_url, BrowserSession, ResourcePolicy, SessionConfig};
 
 use flashbrowse_core::observability;
 
@@ -23,6 +23,13 @@ pub async fn run(
             ))
         }
     }
+    let url = match normalize_url(&url) {
+        Ok(u) => u,
+        Err(e) => {
+            observability::record_op("dump", &url, started, None, false, Some(e.to_string()));
+            return Err(anyhow::anyhow!("{e}"));
+        }
+    };
     let config = SessionConfig {
         chrome_path,
         resource_policy,

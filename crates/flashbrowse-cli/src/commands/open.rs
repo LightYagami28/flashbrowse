@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use flashbrowse_core::{BrowserSession, ResourcePolicy, SessionConfig};
+use flashbrowse_core::{normalize_url, BrowserSession, ResourcePolicy, SessionConfig};
 
 use super::session_file::write_session;
 use flashbrowse_core::observability;
@@ -15,6 +15,15 @@ pub async fn run(
     resource_policy: ResourcePolicy,
 ) -> anyhow::Result<()> {
     let started = std::time::Instant::now();
+    // Resolve before launching: a typo must not cost a browser, and the raw
+    // CDP error for a scheme-less host ("invalid URL") says nothing useful.
+    let url = match normalize_url(&url) {
+        Ok(u) => u,
+        Err(e) => {
+            observability::record_op("open", &url, started, None, false, Some(e.to_string()));
+            return Err(anyhow::anyhow!("{e}"));
+        }
+    };
     let config = SessionConfig {
         chrome_path,
         resource_policy,
