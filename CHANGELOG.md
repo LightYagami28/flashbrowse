@@ -122,6 +122,13 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
   report.
 
 ### Security
+- `url` 2.5.8 carried RUSTSEC-2026-0592: `Url::origin()` recursed once per
+  `blob:` prefix with no depth limit, so a deeply nested `blob:` URL overflowed
+  the stack and aborted the process. Bumped to 2.5.9, which takes the inner
+  origin only for `http`, `https` and `file` and never recurses
+  (`form_urlencoded` 1.2.3 comes with it). `url` arrives transitively through
+  `reqwest`; flashbrowse never calls `Url::origin()`, but the bump keeps
+  `cargo audit` clean and costs nothing.
 - `zip` 4.6.1 carried six advisories (RUSTSEC-2026-0429, -0367, -0548,
   -0368, -0369, -0545). Upgraded to 9.8.1 with only the deflate feature
   enabled, since Chrome-for-Testing archives are deflate/store and the AES,
