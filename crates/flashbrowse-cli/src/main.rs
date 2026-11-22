@@ -182,18 +182,28 @@ async fn main() -> anyhow::Result<()> {
 
     // Graceful shutdown: SIGINT/SIGTERM must not orphan a browser. (On Linux
     // the child also gets PR_SET_PDEATHSIG, so even SIGKILL is covered.)
+    //
+    // `tokio::signal::unix` only exists on unix; Windows has no SIGTERM, so
+    // console Ctrl+C (`ctrl_c`) is the only shutdown signal it can receive.
     let shutdown = async {
-        let mut term =
-            match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
-                Ok(s) => s,
-                Err(_) => {
-                    let _ = tokio::signal::ctrl_c().await;
-                    return;
-                }
-            };
-        tokio::select! {
-            _ = term.recv() => {}
-            _ = tokio::signal::ctrl_c() => {}
+        #[cfg(unix)]
+        {
+            let mut term =
+                match tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()) {
+                    Ok(s) => s,
+                    Err(_) => {
+                        let _ = tokio::signal::ctrl_c().await;
+                        return;
+                    }
+                };
+            tokio::select! {
+                _ = term.recv() => {}
+                _ = tokio::signal::ctrl_c() => {}
+            }
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = tokio::signal::ctrl_c().await;
         }
     };
 

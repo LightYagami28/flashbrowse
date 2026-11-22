@@ -17,3 +17,6 @@ tracing-subscriber = { workspace = true }
 [dev-dependencies]
 flashbrowse-cdp = { path = "../flashbrowse-cdp" }
 flashbrowse-core = { path = "../flashbrowse-core" }
+
+[lints]
+workspace = true

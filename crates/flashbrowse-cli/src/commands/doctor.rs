@@ -309,6 +309,8 @@ fn mem_available_mb_windows() -> Option<u64> {
     s.trim().parse::<u64>().ok()
 }
 
+// Only the `ps`-based orphan scan uses this; Windows counts via PowerShell.
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 fn chrome_cmdline_has_flashbrowse_profile(cmdline: &str) -> bool {
     let lower = cmdline.to_ascii_lowercase();
     (lower.contains("chrome") || lower.contains("chromium")) && lower.contains("flashbrowse-")
@@ -351,7 +353,7 @@ fn count_orphan_browsers() -> usize {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, any(target_os = "linux", target_os = "macos")))]
 mod tests {
     use super::chrome_cmdline_has_flashbrowse_profile;
 

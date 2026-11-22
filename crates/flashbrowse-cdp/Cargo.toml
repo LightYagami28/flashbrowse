@@ -3,7 +3,6 @@ name = "flashbrowse-cdp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-homepage.workspace = true
 repository.workspace = true
 
 [dependencies]
@@ -17,7 +16,14 @@ tracing = { workspace = true }
 dashmap = { workspace = true }
 regex = { workspace = true }
 which = { workspace = true }
+
+# Only used for process-group and parent-death handling on unix; declaring it
+# for every target would be an unused dependency on Windows.
+[target.'cfg(unix)'.dependencies]
 libc = { workspace = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }
+
+[lints]
+workspace = true
