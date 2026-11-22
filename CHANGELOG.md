@@ -4,6 +4,8 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-11-22
+
 ### Added
 - `open`, `dump`, `bench` and MCP `browser_open` accept a scheme-less URL.
   `flashbrowse open example.com` now works like an address bar: `https://` is

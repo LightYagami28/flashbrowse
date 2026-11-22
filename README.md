@@ -158,7 +158,7 @@ memory, stored sessions, and orphaned browser processes. Exits `1` if a
 blocking check fails.
 
 ```text
-flashbrowse doctor  (v1.0.1)
+flashbrowse doctor  (v1.0.2)
   [PASS] chromium         /usr/bin/google-chrome-stable (Google Chrome 147.0.7727.116)
   [PASS] managed-chrome   installed at /home/user/.cache/flashbrowse/chrome
   [PASS] cache-dir        /home/user/.cache/flashbrowse (writable=true)
