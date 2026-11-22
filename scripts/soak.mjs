@@ -20,6 +20,8 @@
  *   --screenshot      include a screenshot tool call every N iterations
  *   --out <file>      write the JSON report here (default: soak-report.json)
  *   --bin <path>      flashbrowse binary (default: target/release/flashbrowse)
+ *   --check-report <file>
+ *                     re-run the exit gates on a saved report, no browser
  *
  * The soak is intentionally SEQUENTIAL: one tool call at a time, one page at
  * a time. Running tools in parallel would measure the machine, not the tool.
@@ -27,7 +29,8 @@
  * Exit codes:
  *   - non-zero if error rate > 5%
  *   - non-zero if latency drift (last-tenth p50 / first-tenth p50) > 1.2x
- *   - non-zero if flashbrowse RSS grew > 50% during the run
+ *   - non-zero if flashbrowse steady-state RSS grew > 50% AND > 8 MiB after
+ *     the warm-up window (see memoryGate; a cold process is not a leak)
  */
 
 import { spawn } from "node:child_process";
@@ -45,6 +48,7 @@ function parseArgs(argv) {
     screenshotEvery: 20,
     out: "soak-report.json",
     bin: "target/release/flashbrowse",
+    checkReport: null,
   };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
@@ -67,6 +71,9 @@ function parseArgs(argv) {
       case "--bin":
         args.bin = argv[++i];
         break;
+      case "--check-report":
+        args.checkReport = argv[++i];
+        break;
       case "--help":
         console.log(readFileSync(new URL(import.meta.url)).toString().split("*/")[0]);
         process.exit(0);
@@ -81,6 +88,36 @@ function parseArgs(argv) {
 }
 
 const args = parseArgs(process.argv);
+
+// Re-gate a saved report without spawning anything. Useful when the gate
+// logic changes and old runs have to be re-judged from the same evidence.
+if (args.checkReport) {
+  const path = resolve(args.checkReport);
+  const saved = JSON.parse(readFileSync(path, "utf8"));
+  const gate = evaluateGates({
+    timeline: saved.timeline,
+    durationSec: saved.durationSec,
+    errorCount: saved.errorCount,
+    toolCalls: saved.toolCalls,
+    driftRatio: saved.drift?.drift_ratio,
+  });
+  const m = gate.memory;
+  const signed = `${m.growth_kb >= 0 ? "+" : ""}${m.growth_kb}kB`;
+  const slope = `${m.slope_kb_per_hour >= 0 ? "+" : ""}${m.slope_kb_per_hour}kB/h`;
+  console.log(`re-checking ${path}`);
+  console.log(
+    `error rate    ${saved.errorCount ?? 0}/${saved.toolCalls ?? 0}${gate.errorFail ? " FAIL" : " ok"}`
+  );
+  console.log(
+    `latency drift ${saved.drift?.drift_ratio}x${gate.driftFail ? " FAIL" : " ok"}`
+  );
+  console.log(
+    `memory steady ${m.baseline_kb}kB -> ${m.end_kb}kB (${m.ratio}x, ${signed}; trend ${slope} ` +
+      `r2 ${m.trend_r2}, cold ${m.cold_start_kb}kB, ${m.warmup_sec}s warm-up)${gate.memoryFail ? " FAIL" : " ok"}`
+  );
+  process.exit(gate.errorFail || gate.driftFail || gate.memoryFail ? 1 : 0);
+}
+
 const BIN = resolve(args.bin);
 if (!existsSync(BIN)) {
   console.error(`flashbrowse binary not found: ${BIN}`);
@@ -220,6 +257,140 @@ function summarize(samples) {
     max_ms: ms[ms.length - 1] ?? 0,
     p50_tokens: percentile(tokens, 0.5),
     total_tokens: tokens.reduce((a, b) => a + b, 0),
+  };
+}
+
+// ---------------------------------------------------------------- leak gate
+
+function median(values) {
+  if (!values.length) return 0;
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 === 1 ? s[mid] : Math.round((s[mid - 1] + s[mid]) / 2);
+}
+
+function linearFit(points) {
+  const n = points.length;
+  if (n < 3) return { slope_kb_per_sec: 0, r2: 0 };
+  const meanT = points.reduce((a, p) => a + p.t, 0) / n;
+  const meanRss = points.reduce((a, p) => a + p.rssFb, 0) / n;
+  let sxy = 0;
+  let sxx = 0;
+  let syy = 0;
+  for (const p of points) {
+    const dt = p.t - meanT;
+    const dr = p.rssFb - meanRss;
+    sxy += dt * dr;
+    sxx += dt * dt;
+    syy += dr * dr;
+  }
+  if (sxx === 0 || syy === 0) return { slope_kb_per_sec: 0, r2: 0 };
+  return {
+    slope_kb_per_sec: sxy / sxx,
+    r2: (sxy * sxy) / (sxx * syy),
+  };
+}
+
+/**
+ * Leak gate.
+ *
+ * RSS is not flat from iteration one. The first CDP frames, the action map and
+ * the JSON buffers fault in heap pages, so a cold process climbs for the first
+ * ~30 s and then plateaus. Comparing timeline[0] against the last sample
+ * therefore measures that warm-up, and a short run looks like a leak while a
+ * long run amortizes it away. That is exactly what happened to the 5 minute CI
+ * soak: RSS went 11.3 MB -> 18.3 MB in the first 30 s, then held ~17.9 MB for
+ * the remaining 4.5 minutes, and the gate failed on the warm-up.
+ *
+ * Everything below is measured after the warm-up window, so the baseline is a
+ * steady-state process, not a cold one. Two independent signals fail the gate:
+ *
+ *   ratio:  end median > 1.5x baseline median AND growth > 8 MiB. Catches a
+ *           process that doubles. The absolute floor keeps 1.5x of a ~11 MB
+ *           baseline (which is allocator noise between windows) from tripping.
+ *
+ *   trend:  a least-squares line through the steady-state samples with R2 >=
+ *           0.8 whose slope, projected one more hour, would push RSS past
+ *           1.5x of the baseline. A 5 minute run cannot see a slow leak as a
+ *           ratio: a leak adding 5.4 MB in 4 minutes is only 1.35x by the end,
+ *           yet it is ~500 MB/h and must fail. R2 guards against a one-time
+ *           step (a cache filling, then holding) being read as a leak, and
+ *           0.8 is safe by construction: the R2 of a pure two-level step is
+ *           3p(1-p), which peaks at 0.75 when the step sits at the midpoint.
+ *           Do not lower it below 0.75.
+ *
+ * `cold_start_kb` is reported for context. It is not a gate.
+ */
+function memoryGate(timeline, durationSec) {
+  const points = (timeline ?? []).filter((p) => p && p.rssFb > 0);
+  if (points.length === 0) {
+    return {
+      ok: true,
+      evaluated: false,
+      warmup_sec: 0,
+      window_sec: 0,
+      cold_start_kb: 0,
+      baseline_kb: 0,
+      end_kb: 0,
+      growth_kb: 0,
+      ratio: null,
+      slope_kb_per_hour: 0,
+      trend_r2: 0,
+      projected_kb_1h: 0,
+      ratio_fail: false,
+      trend_fail: false,
+    };
+  }
+  const warmupSec = Math.min(60, Math.max(5, Math.round(durationSec * 0.2)));
+  const windowSec = Math.max(10, Math.round((durationSec - warmupSec) / 4));
+  const steady = points.filter((p) => p.t >= warmupSec);
+  const baselinePoints = steady.filter((p) => p.t < warmupSec + windowSec);
+  const endPoints = points.filter((p) => p.t >= durationSec - windowSec);
+  const baselineKb = median(
+    (baselinePoints.length ? baselinePoints : steady.length ? steady : points).map(
+      (p) => p.rssFb
+    )
+  );
+  const endKb = median((endPoints.length ? endPoints : points).map((p) => p.rssFb));
+  const growthKb = endKb - baselineKb;
+  const ratio = baselineKb > 0 ? Number((endKb / baselineKb).toFixed(3)) : null;
+
+  const fit = linearFit(steady.length ? steady : points);
+  const slopePerHour = Math.round(fit.slope_kb_per_sec * 3600);
+  const projectedKb = Math.round(endKb + fit.slope_kb_per_sec * 3600);
+
+  const ratioFail = ratio != null && ratio > 1.5 && growthKb > 8192;
+  const trendFail =
+    fit.r2 >= 0.8 &&
+    fit.slope_kb_per_sec > 0 &&
+    baselineKb > 0 &&
+    projectedKb > baselineKb * 1.5;
+
+  return {
+    ok: !(ratioFail || trendFail),
+    evaluated: true,
+    warmup_sec: warmupSec,
+    window_sec: windowSec,
+    cold_start_kb: points[0].rssFb,
+    baseline_kb: baselineKb,
+    end_kb: endKb,
+    growth_kb: growthKb,
+    ratio,
+    slope_kb_per_hour: slopePerHour,
+    trend_r2: Number(fit.r2.toFixed(3)),
+    projected_kb_1h: projectedKb,
+    ratio_fail: ratioFail,
+    trend_fail: trendFail,
+  };
+}
+
+function evaluateGates({ timeline, durationSec, errorCount, toolCalls, driftRatio }) {
+  const memory = memoryGate(timeline, durationSec);
+  return {
+    errorFail: (errorCount ?? 0) > (toolCalls ?? 0) * 0.05,
+    driftFail: driftRatio != null && driftRatio > 1.2,
+    memoryFail: !memory.ok,
+    memory,
   };
 }
 
@@ -415,11 +586,21 @@ const report = {
     rss_chrome_start_kb: timeline[0]?.rssChrome ?? 0,
     rss_chrome_end_kb: timeline.at(-1)?.rssChrome ?? 0,
     chrome_processes_end: chromeCount(),
+    leak_gate: null,
   },
   errors: errors.slice(0, 100),
   errorCount: errors.length,
   timeline,
 };
+
+const gate = evaluateGates({
+  timeline,
+  durationSec,
+  errorCount: errors.length,
+  toolCalls: samples.length,
+  driftRatio: report.drift.drift_ratio,
+});
+report.memory.leak_gate = gate.memory;
 
 writeFileSync(resolve(args.out), JSON.stringify(report, null, 2));
 
@@ -432,27 +613,32 @@ console.log(
   `latency drift     first-tenth p50 ${report.drift.first_tenth_p50_ms}ms -> last-tenth p50 ${report.drift.last_tenth_p50_ms}ms (${report.drift.drift_ratio}x)`
 );
 console.log(`tokens total      ${report.overall.total_tokens}`);
+const mem = gate.memory;
+const memGrowth = `${mem.growth_kb >= 0 ? "+" : ""}${mem.growth_kb}kB`;
+const memSlope = `${mem.slope_kb_per_hour >= 0 ? "+" : ""}${mem.slope_kb_per_hour}kB/h`;
 console.log(
-  `memory            fb ${report.memory.rss_flashbrowse_start_kb}kB -> ${report.memory.rss_flashbrowse_end_kb}kB | chrome ${report.memory.rss_chrome_start_kb}kB -> ${report.memory.rss_chrome_end_kb}kB`
+  `memory fb         cold ${mem.cold_start_kb}kB | steady ${mem.baseline_kb}kB -> ${mem.end_kb}kB ` +
+    `(${mem.ratio}x, ${memGrowth}; trend ${memSlope} r2 ${mem.trend_r2} after ${mem.warmup_sec}s warm-up)`
+);
+console.log(
+  `memory chrome     ${report.memory.rss_chrome_start_kb}kB -> ${report.memory.rss_chrome_end_kb}kB`
 );
 console.log(`chrome procs      ${report.memory.chrome_processes_end} at exit`);
 console.log(`report written    ${resolve(args.out)}`);
 
-const errorFail = report.errorCount > report.toolCalls * 0.05;
-const driftFail =
-  report.drift.drift_ratio != null && report.drift.drift_ratio > 1.2;
-const rssStart = report.memory.rss_flashbrowse_start_kb || 1;
-const rssEnd = report.memory.rss_flashbrowse_end_kb || rssStart;
-const rssFail = rssEnd > rssStart * 1.5;
-if (errorFail) console.error("soak FAILED: error rate above 5%");
-if (driftFail) {
+if (gate.errorFail) console.error("soak FAILED: error rate above 5%");
+if (gate.driftFail) {
   console.error(
     `soak FAILED: latency drift ${report.drift.drift_ratio}x exceeds 1.2x`
   );
 }
-if (rssFail) {
+if (gate.memoryFail) {
+  const why = mem.ratio_fail
+    ? `${mem.ratio}x baseline`
+    : `trend ${memSlope} (r2 ${mem.trend_r2}), projected ${mem.projected_kb_1h}kB after one hour`;
   console.error(
-    `soak FAILED: flashbrowse RSS grew from ${rssStart}kB to ${rssEnd}kB (> 1.5x)`
+    `soak FAILED: flashbrowse RSS grew from ${mem.baseline_kb}kB to ${mem.end_kb}kB ` +
+      `after the ${mem.warmup_sec}s warm-up: ${why}`
   );
 }
-process.exit(errorFail || driftFail || rssFail ? 1 : 0);
+process.exit(gate.errorFail || gate.driftFail || gate.memoryFail ? 1 : 0);

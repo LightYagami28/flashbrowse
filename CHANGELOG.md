@@ -111,6 +111,15 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 - An explicit Firefox path is authoritative. `find_firefox(Some(p))` used to
   fall back to PATH when `p` did not exist, which silently ran a different
   browser than the caller pinned.
+- The soak memory gate no longer fails on allocator warm-up. It compared the
+  first RSS sample against the last, so a cold process climbing from 11 MB to
+  18 MB in its first 30 s read as a leak; the 5 minute CI soak failed on a run
+  whose RSS was flat for the remaining 4.5 minutes (and ended below its own
+  30 s peak). The gate now baselines after a warm-up window and fails only on
+  real growth: a 1.5x ratio with an 8 MiB floor, or a fitted trend (R2 >= 0.8,
+  which a one-time step cannot reach) that would exceed 1.5x within an hour.
+  `node scripts/soak.mjs --check-report <file>` re-runs the gates on a saved
+  report.
 
 ### Security
 - `zip` 4.6.1 carried six advisories (RUSTSEC-2026-0429, -0367, -0548,
