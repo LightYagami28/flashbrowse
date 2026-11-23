@@ -1,0 +1,12 @@
+{
+  "id": "modal-fill",
+  "fixture": "modal-dialog.html",
+  "goal": "Open the dialog, type River in the name field, click Save, confirm saved:River.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.getElementById('out').textContent === 'saved:River'"
+    }
+  ],
+  "max_turns": 10
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>flashbrowse fidelity - spatial</title>
+  </head>
+  <body>
+    <h1>Spatial fixture</h1>
+
+    <p>Chart summary: revenue up 12 percent.</p>
+    <canvas id="chart" width="200" height="100"></canvas>
+
+    <div style="width: 80px; height: 80px; background: #c00">Red zone</div>
+    <div style="width: 80px; height: 80px; background: #0c0">Green zone</div>
+
+    <label for="zoom">Zoom</label>
+    <input id="zoom" type="range" min="0" max="100" value="50" />
+
+    <div id="draggable" draggable="true">Drag me</div>
+
+    <p>Legend: red is bad, green is good.</p>
+  </body>
+</html>

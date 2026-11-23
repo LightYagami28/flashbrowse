@@ -1,0 +1,20 @@
+# Sequential real-world pages (no auth). Sites change; failures are data.
+https://example.com
+https://www.iana.org/domains/example
+https://www.wikipedia.org
+https://developer.mozilla.org/en-US/docs/Web/HTML
+https://news.ycombinator.com
+https://www.rust-lang.org
+https://doc.rust-lang.org/std/
+https://httpbin.org/forms/post
+https://the-internet.herokuapp.com/login
+https://the-internet.herokuapp.com/tables
+https://the-internet.herokuapp.com/dropdown
+https://the-internet.herokuapp.com/checkboxes
+https://the-internet.herokuapp.com/dynamic_loading/1
+https://the-internet.herokuapp.com/infinite_scroll
+https://www.w3.org/WAI/demos/bad/
+https://github.com/torvalds/linux
+https://jsonplaceholder.typicode.com/
+https://httpstat.us/200
+https://httpstat.us/500

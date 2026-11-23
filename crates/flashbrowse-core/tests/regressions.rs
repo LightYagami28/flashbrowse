@@ -49,6 +49,47 @@ fn ax_value_exposes_text_bool_and_int() {
     assert_eq!(i.as_i64(), Some(7));
 }
 
+#[test]
+fn ax_value_reads_string_booleans() {
+    // Chromium sends `checked` as the string "true" but `readonly` as a JSON
+    // bool. Both must read as true, and "false" must not.
+    let s: AXValue =
+        serde_json::from_str(r#"{"type":"booleanOrUndefined","value":"true"}"#).unwrap();
+    assert!(s.as_bool(), "string \"true\" must be true");
+    let f: AXValue =
+        serde_json::from_str(r#"{"type":"booleanOrUndefined","value":"false"}"#).unwrap();
+    assert!(!f.as_bool(), "string \"false\" must be false");
+    let b: AXValue = serde_json::from_str(r#"{"type":"boolean","value":true}"#).unwrap();
+    assert!(b.as_bool());
+}
+
+#[test]
+fn ax_node_serializes_with_cdp_field_names() {
+    // `dump --format raw` must emit what Chromium sent, not Rust field names.
+    let raw = r#"{
+        "nodeId": "12",
+        "ignored": false,
+        "role": {"type": "internalRole", "value": "button"},
+        "name": {"type": "computedString", "value": "Submit"},
+        "backendDOMNodeId": 4242,
+        "childIds": ["13"]
+    }"#;
+    let node: AXNode = serde_json::from_str(raw).expect("AXNode must parse");
+    let out = serde_json::to_value(&node).expect("AXNode must serialize");
+    assert_eq!(out["nodeId"], "12");
+    assert_eq!(out["backendDOMNodeId"], 4242);
+    assert_eq!(out["childIds"][0], "13");
+    assert_eq!(out["role"]["value"], "button");
+    assert!(
+        out.get("node_id").is_none(),
+        "Rust field names must not leak into the raw dump"
+    );
+    // The dump must be re-readable by the same type.
+    let again: AXNode = serde_json::from_value(out).expect("dump must round-trip");
+    assert_eq!(again.backend_node_id, Some(4242));
+    assert_eq!(again.child_ids, vec!["13".to_string()]);
+}
+
 // -------------------------------------------------------------- compressor
 
 fn node(id: &str, role: &str, name: &str, backend: Option<i64>) -> AXNode {
@@ -473,4 +514,48 @@ async fn plain_text_in_generic_containers_survives() {
         1,
         "text duplicated: {text:?}"
     );
+}
+
+#[test]
+fn aria_grid_rows_collapse_with_action_refs_for_repeated_buttons() {
+    let nodes = vec![
+        with_children(node("1", "grid", "", None), &["2", "6"]),
+        with_children(node("2", "row", "", None), &["3", "4"]),
+        node("3", "gridcell", "Eve", None),
+        with_children(node("4", "gridcell", "", None), &["5"]),
+        node("5", "button", "Edit", Some(101)),
+        with_children(node("6", "row", "", None), &["7", "8"]),
+        node("7", "gridcell", "Frank", None),
+        with_children(node("8", "gridcell", "", None), &["9"]),
+        node("9", "button", "Edit", Some(102)),
+    ];
+    let (out, map) = compress(&nodes);
+    assert_eq!(map.len(), 2);
+    let rendered = flashbrowse_core::tree::render("Grid", "https://x", &out);
+    assert!(rendered.contains("Row: Eve | [1]"), "{rendered}");
+    assert!(rendered.contains("[1] Button: \"Edit\""), "{rendered}");
+    assert!(rendered.contains("Row: Frank | [2]"), "{rendered}");
+    assert!(rendered.contains("[2] Button: \"Edit\""), "{rendered}");
+    assert!(
+        !rendered.contains("Gridcell:"),
+        "gridcell wrapper lines should be collapsed into Row: {rendered}"
+    );
+}
+
+#[test]
+fn long_table_row_keeps_edit_ref_on_row_line() {
+    let long_desc = "d".repeat(180);
+    let nodes = vec![
+        with_children(node("1", "table", "", None), &["2"]),
+        with_children(node("2", "row", "", None), &["3", "4", "5"]),
+        node("3", "cell", "Alice", None),
+        node("4", "cell", &long_desc, None),
+        with_children(node("5", "cell", "", None), &["6"]),
+        node("6", "button", "Edit", Some(201)),
+    ];
+    let (out, _) = compress(&nodes);
+    let rendered = flashbrowse_core::tree::render("LongRow", "https://x", &out);
+    assert!(rendered.contains("Row: Alice | "), "{rendered}");
+    assert!(rendered.contains(" | [1]\n"), "{rendered}");
+    assert!(rendered.contains("[1] Button: \"Edit\""), "{rendered}");
 }

@@ -1,0 +1,12 @@
+{
+  "id": "lazy-tab-two",
+  "fixture": "lazy-tabs.html",
+  "goal": "Switch to tab Two so the secret panel text is visible.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "!document.getElementById('p2').hidden && document.getElementById('p2').innerText.includes('secret')"
+    }
+  ],
+  "max_turns": 6
+}

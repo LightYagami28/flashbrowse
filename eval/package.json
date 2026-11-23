@@ -1,0 +1,14 @@
+{
+  "name": "flashbrowse-eval",
+  "private": true,
+  "type": "module",
+  "description": "Task-level evaluation harness (dev-only, not shipped)",
+  "scripts": {
+    "verify": "node verify-tasks.mjs",
+    "run": "node run.mjs",
+    "report": "node report.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.51.0"
+  }
+}

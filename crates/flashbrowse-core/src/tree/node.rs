@@ -24,6 +24,8 @@ pub struct SemanticNode {
     pub level: Option<u32>,
     /// Original AXTree `nodeId` (diagnostics).
     pub node_id: String,
+    /// Depth in the AX tree (root = 0). Used by nested render mode.
+    pub depth: usize,
 }
 
 impl SemanticNode {

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>many buttons</title></head>
+  <body>
+    <h1>Disambiguate button #37</h1>
+    <p id="status">none</p>
+    <script>
+      for (let i = 1; i <= 60; i++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = i === 37 ? "Target" : "Submit";
+        b.id = `btn-${i}`;
+        b.onclick = () => { document.getElementById("status").textContent = `clicked-${i}`; };
+        document.body.appendChild(b);
+        document.body.appendChild(document.createTextNode(" "));
+      }
+    </script>
+  </body>
+</html>

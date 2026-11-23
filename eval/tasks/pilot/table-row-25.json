@@ -1,0 +1,9 @@
+{
+  "id": "table-row-25",
+  "fixture": "table.html",
+  "goal": "Find row 25 in the table and confirm the name is item-25.",
+  "success": [
+    { "kind": "dom_text", "selector": "#rows", "includes": "item-25" }
+  ],
+  "max_turns": 6
+}

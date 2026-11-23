@@ -1,0 +1,9 @@
+{
+  "id": "unicode-cafe",
+  "fixture": "unicode.html",
+  "goal": "Confirm the page contains the word cafe with an accent.",
+  "success": [
+    { "kind": "dom_text", "selector": "body", "includes": "café" }
+  ],
+  "max_turns": 4
+}

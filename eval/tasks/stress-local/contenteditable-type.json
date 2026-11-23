@@ -1,0 +1,12 @@
+{
+  "id": "contenteditable-type",
+  "fixture": "contenteditable.html",
+  "goal": "Replace editor text with alpha, click Read, confirm mirror shows alpha.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.getElementById('mirror').textContent.trim() === 'alpha'"
+    }
+  ],
+  "max_turns": 8
+}

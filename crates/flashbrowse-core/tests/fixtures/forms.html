@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>flashbrowse fidelity - forms</title>
+  </head>
+  <body>
+    <h1>Form fixture</h1>
+    <form>
+      <label for="name">Name</label>
+      <input id="name" name="name" type="text" value="Ada" />
+
+      <label for="country">Country</label>
+      <select id="country" name="country">
+        <option value="fr">France</option>
+        <option value="jp" selected>Japan</option>
+      </select>
+
+      <label><input type="checkbox" id="subscribe" checked /> Subscribe</label>
+
+      <fieldset>
+        <legend>Plan</legend>
+        <label><input type="radio" name="plan" value="free" /> Free</label>
+        <label><input type="radio" name="plan" value="pro" checked /> Pro</label>
+      </fieldset>
+
+      <label for="notes">Notes</label>
+      <textarea id="notes" name="notes">Initial note text</textarea>
+
+      <button id="save" type="button">Save</button>
+      <button id="disabled-action" type="button" disabled>Disabled action</button>
+      <button id="icon-close" type="button" aria-label="Close dialog">X</button>
+    </form>
+
+    <details open>
+      <summary>Advanced options</summary>
+      <p>Advanced body text.</p>
+    </details>
+
+    <div style="display: none">SECRET HIDDEN CONTENT</div>
+    <div style="visibility: hidden">INVISIBLE HIDDEN TEXT</div>
+    <div aria-hidden="true">ARIA HIDDEN TEXT</div>
+
+    <p>Visible closing paragraph.</p>
+  </body>
+</html>

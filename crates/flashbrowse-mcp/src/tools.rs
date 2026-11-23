@@ -57,6 +57,17 @@ pub fn tool_definitions() -> Vec<Value> {
             "inputSchema": empty_schema()
         }),
         serde_json::json!({
+            "name": "browser_evaluate",
+            "description": "Evaluate a JavaScript expression in the live page and return the JSON-serialized result. Used for task success checks and diagnostics.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "expression": {"type": "string", "description": "JS expression evaluated in the page (returnByValue)"}
+                },
+                "required": ["expression"]
+            }
+        }),
+        serde_json::json!({
             "name": "browser_screenshot",
             "description": "Captures a viewport or full-page PNG of the current session (after browser_open/browser_act). Waits for images/network to settle. Use this tool instead of a separate browser MCP.",
             "inputSchema": {
@@ -167,6 +178,7 @@ pub async fn call_tool(
         "browser_open" => call_open(arguments, handle, default_config).await,
         "browser_act" => call_act(arguments, handle, default_config).await,
         "browser_extract_markdown" => call_markdown(handle).await,
+        "browser_evaluate" => call_evaluate(arguments, handle).await,
         "browser_screenshot" => call_screenshot(arguments, handle).await,
         other => Err(McpError::InvalidParams(format!("unknown tool '{other}'"))),
     };
@@ -368,6 +380,21 @@ async fn call_act(
     };
     match result {
         Ok(tree) => Ok(ToolResult::text(tree)),
+        Err(e) => Ok(ToolResult::error(e.to_string())),
+    }
+}
+
+async fn call_evaluate(arguments: &Value, handle: &SessionHandle) -> Result<ToolResult, McpError> {
+    let expression = arg_string(arguments, "expression")?;
+    if expression.is_empty() {
+        return Err(McpError::InvalidParams(
+            "expression must not be empty".to_string(),
+        ));
+    }
+    let mut guard = handle.lock().await;
+    let session = require_session(&mut guard)?;
+    match session.evaluate(&expression).await {
+        Ok(value) => Ok(ToolResult::text(value.to_string())),
         Err(e) => Ok(ToolResult::error(e.to_string())),
     }
 }

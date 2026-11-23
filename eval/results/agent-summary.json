@@ -1,0 +1,293 @@
+{
+  "at": "2026-11-23T07:05:52.527Z",
+  "rows": [
+    {
+      "file": "dry-pilot-rerun.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 8,
+      "total": 10,
+      "rate": 0.8,
+      "repeats": 1
+    },
+    {
+      "file": "dry-pilot-v2.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 8,
+      "total": 10,
+      "rate": 0.8,
+      "repeats": 1
+    },
+    {
+      "file": "dry-real-v2.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 5,
+      "total": 10,
+      "rate": 0.5,
+      "repeats": 1
+    },
+    {
+      "file": "dry-real-web.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 1,
+      "total": 6,
+      "rate": 0.167,
+      "repeats": 1
+    },
+    {
+      "file": "dry-stress-local.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 1,
+      "total": 5,
+      "rate": 0.2,
+      "repeats": 1
+    },
+    {
+      "file": "dry-stress-v2.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 1,
+      "total": 5,
+      "rate": 0.2,
+      "repeats": 1
+    },
+    {
+      "file": "llm-real-web-arm-a.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 5,
+      "total": 6,
+      "rate": 0.833,
+      "repeats": 1
+    },
+    {
+      "file": "llm-stress-local-arm-b.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 2,
+      "total": 5,
+      "rate": 0.4,
+      "repeats": 1
+    },
+    {
+      "file": "mcp-marathon-3x.json",
+      "model": "?",
+      "arm": "?",
+      "pass": 0,
+      "total": 57,
+      "rate": 0,
+      "repeats": 1
+    },
+    {
+      "file": "mcp-pilot-dry-run.json",
+      "model": "dry-run",
+      "arm": "a",
+      "pass": 8,
+      "total": 10,
+      "rate": 0.8,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-ling-arm-a-r2.json",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "a",
+      "pass": 0,
+      "total": 20,
+      "rate": 0,
+      "repeats": 2
+    },
+    {
+      "file": "pilot-ling-arm-a.json",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "a",
+      "pass": 0,
+      "total": 10,
+      "rate": 0,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-ling-arm-b.json",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "b",
+      "pass": 0,
+      "total": 10,
+      "rate": 0,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-nemotron-arm-a-r2.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 16,
+      "total": 20,
+      "rate": 0.8,
+      "repeats": 2
+    },
+    {
+      "file": "pilot-nemotron-arm-a-r3.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 16,
+      "total": 30,
+      "rate": 0.533,
+      "repeats": 3
+    },
+    {
+      "file": "pilot-nemotron-arm-a.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 5,
+      "total": 10,
+      "rate": 0.5,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-nemotron-arm-b-r2.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 2,
+      "total": 20,
+      "rate": 0.1,
+      "repeats": 2
+    },
+    {
+      "file": "pilot-nemotron-arm-b-r3.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 24,
+      "total": 30,
+      "rate": 0.8,
+      "repeats": 3
+    },
+    {
+      "file": "pilot-nemotron-arm-b.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 8,
+      "total": 10,
+      "rate": 0.8,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-nemotron-arm-c-r3.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "pass": 25,
+      "total": 30,
+      "rate": 0.833,
+      "repeats": 3
+    },
+    {
+      "file": "pilot-nemotron-arm-c-rerun.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "pass": 8,
+      "total": 10,
+      "rate": 0.8,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-nemotron-arm-c.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "pass": 8,
+      "total": 10,
+      "rate": 0.8,
+      "repeats": 1
+    },
+    {
+      "file": "pilot-nemotron-arm-d-r2.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "d",
+      "pass": 15,
+      "total": 20,
+      "rate": 0.75,
+      "repeats": 2
+    },
+    {
+      "file": "pilot-nemotron-arm-e.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "e",
+      "pass": 3,
+      "total": 10,
+      "rate": 0.3,
+      "repeats": 1
+    },
+    {
+      "file": "real-ling-arm-a.json",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "a",
+      "pass": 0,
+      "total": 10,
+      "rate": 0,
+      "repeats": 1
+    },
+    {
+      "file": "real-nemotron-arm-a-r2.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 15,
+      "total": 20,
+      "rate": 0.75,
+      "repeats": 2
+    },
+    {
+      "file": "real-nemotron-arm-a-r3.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 24,
+      "total": 30,
+      "rate": 0.8,
+      "repeats": 3
+    },
+    {
+      "file": "real-nemotron-arm-b-r2.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 15,
+      "total": 20,
+      "rate": 0.75,
+      "repeats": 2
+    },
+    {
+      "file": "real-nemotron-arm-b.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 6,
+      "total": 10,
+      "rate": 0.6,
+      "repeats": 1
+    },
+    {
+      "file": "stress-nemotron-arm-a.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "pass": 3,
+      "total": 5,
+      "rate": 0.6,
+      "repeats": 1
+    },
+    {
+      "file": "stress-nemotron-arm-b-r2.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "pass": 6,
+      "total": 10,
+      "rate": 0.6,
+      "repeats": 2
+    },
+    {
+      "file": "stress-nemotron-arm-c.json",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "pass": 2,
+      "total": 5,
+      "rate": 0.4,
+      "repeats": 1
+    }
+  ]
+}

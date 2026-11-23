@@ -684,6 +684,16 @@ impl BrowserSession {
         &self.last_tree
     }
 
+    /// Document title from the last navigation.
+    pub fn page_title(&self) -> &str {
+        &self.title
+    }
+
+    /// Resolved URL of the loaded page.
+    pub fn page_url(&self) -> &str {
+        &self.url
+    }
+
     /// Flattened CDP `sessionId`.
     pub fn session_id(&self) -> &str {
         &self.session_id

@@ -1,0 +1,9 @@
+{
+  "id": "forms-select-france",
+  "fixture": "forms.html",
+  "goal": "Change the Country dropdown selection to France.",
+  "success": [
+    { "kind": "element_state", "selector": "#country", "prop": "value", "equals": "fr" }
+  ],
+  "max_turns": 8
+}

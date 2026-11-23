@@ -1,0 +1,9 @@
+{
+  "id": "forms-name-ada",
+  "fixture": "forms.html",
+  "goal": "Read the Name field value and confirm it is Ada.",
+  "success": [
+    { "kind": "element_state", "selector": "#name", "prop": "value", "equals": "Ada" }
+  ],
+  "max_turns": 4
+}

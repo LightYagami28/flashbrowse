@@ -1,0 +1,9 @@
+{
+  "id": "shadow-button",
+  "fixture": "shadow.html",
+  "goal": "Find the shadow DOM button labeled Shadow button.",
+  "success": [
+    { "kind": "dom_text", "selector": "body", "includes": "Shadow button" }
+  ],
+  "max_turns": 6
+}

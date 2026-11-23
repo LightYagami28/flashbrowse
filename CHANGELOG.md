@@ -4,6 +4,44 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com/en/1.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-23
+
+### Added
+- `dump --format raw` prints the uncompressed `Accessibility.getFullAXTree`
+  JSON, so the compressor's input can be compared with its output. The AX
+  protocol types now serialize with the same camelCase field names Chromium
+  uses, and a round-trip test guards that.
+- Sliders and spin buttons render their current position as `value=...`.
+  Without geometry, that number is the only way an agent can reason about
+  where a slider sits.
+- A fidelity suite compares the compressed tree with the raw AX tree across
+  forms, tables, accessible names, unicode, shadow DOM, frames and a spatial
+  page. It asserts text recall, action recall, document order, no duplication,
+  hidden-text exclusion, state round-trip and the 120-character truncation
+  bound. `scripts/fidelity.mjs` runs the same checks against real URLs.
+- Render modes for eval: `SemanticNode::depth`, `render_nested`,
+  `dump --format axtree-nested`, and `dump --no-prune` (full non-ignored AX
+  tree). `compress_with_options` exposes the pruned vs full split.
+- Dev-only task eval under `eval/`: pilot tasks, MCP runner, Playwright
+  success checks, and `report.mjs` for markdown summaries.
+- MCP `browser_evaluate` runs JavaScript on the live session so task success
+  checks use the same page the agent mutated, not a fresh browser tab.
+- ARIA `gridcell` support in `compressor.rs` (`role="grid"` / `role="gridcell"`
+  rows now collapse into `Row: ... | [N]` lines without duplicate `Gridcell:`
+  output).
+- Brand icon (`assets/icon.png`, `assets/icon.svg`).
+
+### Fixed
+- `checked`, `selected` and `expanded` were missing from the tree. Chromium
+  sends `checked` as the string `"true"` rather than a JSON bool, and extras
+  were only rendered on actionable lines, so a checked checkbox and a selected
+  option looked exactly like their unselected siblings.
+- An input value appeared twice (`value="Ada"` plus `Text: Ada`), and an icon
+  link's `alt` text appeared twice (the link name plus an image line).
+- Long or wide table rows (`> 120` chars) no longer truncate trailing `[N]`
+  action references off the `Row:` summary line; `truncate_row` budgets
+  non-ref cells while preserving `[N]` refs.
+
 ## [1.0.2] - 2026-11-22
 
 ### Added

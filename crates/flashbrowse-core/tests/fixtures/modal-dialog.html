@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>modal</title></head>
+  <body>
+    <button id="open">Open dialog</button>
+    <dialog id="dlg">
+      <p>Modal text</p>
+      <input id="modal-name" placeholder="Name in modal" />
+      <button id="save">Save</button>
+    </dialog>
+    <p id="out"></p>
+    <script>
+      document.getElementById("open").onclick = () => document.getElementById("dlg").showModal();
+      document.getElementById("save").onclick = () => {
+        document.getElementById("out").textContent =
+          "saved:" + document.getElementById("modal-name").value;
+        document.getElementById("dlg").close();
+      };
+    </script>
+  </body>
+</html>

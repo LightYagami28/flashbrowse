@@ -1,0 +1,12 @@
+{
+  "id": "internet-dropdown",
+  "url": "https://the-internet.herokuapp.com/dropdown",
+  "goal": "Select Option 2 in the dropdown.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.querySelector('#dropdown').value === '2'"
+    }
+  ],
+  "max_turns": 8
+}

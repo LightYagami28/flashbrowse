@@ -1,0 +1,125 @@
+{
+  "runs": [
+    {
+      "task_id": "a11y-read-more-count",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1702,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-country-japan",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1697,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-name-ada",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1759,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-select-france",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1680,
+      "failure_category": "element_state #country"
+    },
+    {
+      "task_id": "forms-subscribe-checked",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1689,
+      "failure_category": null
+    },
+    {
+      "task_id": "frames-parent-text",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1665,
+      "failure_category": null
+    },
+    {
+      "task_id": "shadow-button",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1660,
+      "failure_category": "dom_text body"
+    },
+    {
+      "task_id": "spatial-slider-value",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1758,
+      "failure_category": null
+    },
+    {
+      "task_id": "table-row-25",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 827,
+      "failure_category": null
+    },
+    {
+      "task_id": "unicode-cafe",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1728,
+      "failure_category": null
+    }
+  ],
+  "opts": {
+    "base": "http://127.0.0.1:8099",
+    "binary": "../target/release/flashbrowse",
+    "tasksDir": "tasks/pilot",
+    "arm": "a",
+    "repeats": 1,
+    "out": "results/mcp-pilot-dry-run.json",
+    "dryRun": true,
+    "model": "nvidia/nemotron-3.5-super-vl:free",
+    "maxTurns": 8
+  }
+}

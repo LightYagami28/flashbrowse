@@ -1,0 +1,6 @@
+# Extra pages that previously failed or barely passed fidelity
+https://developer.mozilla.org/en-US/docs/Web/HTML
+https://doc.rust-lang.org/std/
+https://github.com/torvalds/linux
+https://the-internet.herokuapp.com/infinite_scroll
+https://www.rust-lang.org

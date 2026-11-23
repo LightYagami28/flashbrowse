@@ -1,0 +1,13 @@
+{
+  "id": "frames-parent-text",
+  "fixture": "frames.html",
+  "goal": "Confirm parent text before the frame is visible in the page.",
+  "success": [
+    {
+      "kind": "dom_text",
+      "selector": "body",
+      "includes": "Parent text before the frame."
+    }
+  ],
+  "max_turns": 4
+}

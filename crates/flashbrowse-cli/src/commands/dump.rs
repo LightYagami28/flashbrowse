@@ -1,25 +1,29 @@
-//! `flashbrowse dump <url> --format markdown|axtree`.
+//! `flashbrowse dump <url> --format markdown|axtree|axtree-nested|raw`.
 
 use std::path::PathBuf;
 
-use flashbrowse_core::{normalize_url, BrowserSession, ResourcePolicy, SessionConfig};
+use flashbrowse_core::{
+    compress_with_options, normalize_url, render, render_nested, BrowserSession, CompressOptions,
+    ResourcePolicy, SessionConfig,
+};
 
 use flashbrowse_core::observability;
 
-/// Emit Markdown (default) or the formatted AXTree for `url`.
+/// Emit Markdown (default), the compressed AXTree, or the raw CDP AX tree.
 /// Format is validated BEFORE launch so a typo costs zero browsers (H7).
 pub async fn run(
     url: String,
     format: String,
+    no_prune: bool,
     chrome_path: Option<PathBuf>,
     resource_policy: ResourcePolicy,
 ) -> anyhow::Result<()> {
     let started = std::time::Instant::now();
     match format.as_str() {
-        "markdown" | "axtree" => {}
+        "markdown" | "axtree" | "axtree-nested" | "raw" => {}
         other => {
             return Err(anyhow::anyhow!(
-                "unknown --format '{other}' (expected markdown|axtree)"
+                "unknown --format '{other}' (expected markdown|axtree|axtree-nested|raw)"
             ))
         }
     }
@@ -40,7 +44,24 @@ pub async fn run(
         let _ = session.open(&url).await?;
         let out = match format.as_str() {
             "markdown" => session.extract_markdown().await?,
-            "axtree" => session.last_tree().to_string(),
+            "axtree" if !no_prune => session.last_tree().to_string(),
+            "axtree" | "axtree-nested" => {
+                let raw = session.raw_ax_nodes().await?;
+                let opts = CompressOptions { prune: !no_prune };
+                let (nodes, _) = compress_with_options(&raw, opts);
+                if format == "axtree-nested" {
+                    render_nested(session.page_title(), session.page_url(), &nodes)
+                } else {
+                    render(session.page_title(), session.page_url(), &nodes)
+                }
+            }
+            "raw" => {
+                // The uncompressed tree Chromium returned, before any pruning.
+                // Pretty-printed because this is a debugging and eval surface,
+                // not something an agent consumes in a loop.
+                let nodes = session.raw_ax_nodes().await?;
+                serde_json::to_string_pretty(&nodes)?
+            }
             _ => unreachable!("validated above"),
         };
         Ok::<String, flashbrowse_core::CoreError>(out)
@@ -56,7 +77,7 @@ pub async fn run(
         }
     };
     println!("{out}");
-    let actions = if format == "axtree" {
+    let actions = if format == "axtree" || format == "axtree-nested" {
         observability::count_actions(&out)
     } else {
         0

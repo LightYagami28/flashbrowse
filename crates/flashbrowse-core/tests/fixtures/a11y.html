@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>flashbrowse fidelity - accessibility names</title>
+  </head>
+  <body>
+    <h1>Accessibility fixture</h1>
+
+    <button aria-label="Close dialog"><span aria-hidden="true">X</span></button>
+
+    <a href="/home">
+      <img
+        src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+        alt="Home page"
+        width="16"
+        height="16"
+      />
+    </a>
+
+    <p>
+      <a href="/a">Read more</a>
+      <a href="/b">Read more</a>
+      <a href="/c">Read more</a>
+      <a href="/d">Read more</a>
+      <a href="/e">Read more</a>
+    </p>
+
+    <button aria-pressed="true">Bold</button>
+
+    <a href="/title-only" title="Title only link"></a>
+
+    <div role="tablist">
+      <button role="tab" aria-selected="true">Overview</button>
+      <button role="tab">Details</button>
+    </div>
+
+    <button></button>
+
+    <a href="/empty"><span aria-hidden="true">></span></a>
+
+    <img
+      src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+      width="8"
+      height="8"
+    />
+  </body>
+</html>

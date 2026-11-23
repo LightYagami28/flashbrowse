@@ -1,0 +1,12 @@
+{
+  "id": "many-buttons-37",
+  "fixture": "many-buttons.html",
+  "goal": "Click the button labeled Target and verify status shows clicked-37.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.getElementById('status').textContent === 'clicked-37'"
+    }
+  ],
+  "max_turns": 6
+}

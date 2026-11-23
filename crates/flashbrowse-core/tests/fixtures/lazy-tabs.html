@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>lazy tabs</title></head>
+  <body>
+    <div role="tablist">
+      <button role="tab" id="t1" aria-selected="true">One</button>
+      <button role="tab" id="t2">Two</button>
+    </div>
+    <div role="tabpanel" id="p1">Panel one visible</div>
+    <div role="tabpanel" id="p2" hidden>Panel two secret</div>
+    <script>
+      document.getElementById("t2").onclick = () => {
+        document.getElementById("p1").hidden = true;
+        document.getElementById("p2").hidden = false;
+        document.getElementById("t1").ariaSelected = "false";
+        document.getElementById("t2").ariaSelected = "true";
+      };
+    </script>
+  </body>
+</html>

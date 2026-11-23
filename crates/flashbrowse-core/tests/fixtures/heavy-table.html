@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>heavy table</title>
+  </head>
+  <body>
+    <h1>Heavy table (200 rows)</h1>
+    <p id="meta">rows=200</p>
+    <table id="grid">
+      <thead><tr><th>ID</th><th>SKU</th><th>Qty</th></tr></thead>
+      <tbody id="body"></tbody>
+    </table>
+    <script>
+      const body = document.getElementById("body");
+      for (let i = 1; i <= 200; i++) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${i}</td><td>sku-${String(i).padStart(4, "0")}</td><td>${i % 17}</td>`;
+        body.appendChild(tr);
+      }
+    </script>
+  </body>
+</html>

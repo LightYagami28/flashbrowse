@@ -1,0 +1,9 @@
+{
+  "id": "forms-country-japan",
+  "fixture": "forms.html",
+  "goal": "Confirm the Country dropdown is set to Japan (not France).",
+  "success": [
+    { "kind": "element_state", "selector": "#country", "prop": "value", "equals": "jp" }
+  ],
+  "max_turns": 4
+}

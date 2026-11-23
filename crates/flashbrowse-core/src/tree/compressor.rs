@@ -58,6 +58,7 @@ const CONTENT_ROLES: &[&str] = &[
     "table",
     "row",
     "cell",
+    "gridcell",
     "list",
     "listitem",
     "article",
@@ -107,6 +108,7 @@ const NAME_FROM_CHILDREN_ROLES: &[&str] = &[
     "radio",
     "switch",
     "cell",
+    "gridcell",
     "columnheader",
     "rowheader",
     "listitem",
@@ -130,6 +132,7 @@ fn derives_name_from_children(role: &str) -> bool {
             "paragraph"
                 | "listitem"
                 | "cell"
+                | "gridcell"
                 | "columnheader"
                 | "rowheader"
                 | "heading"
@@ -140,7 +143,7 @@ fn derives_name_from_children(role: &str) -> bool {
 }
 
 /// Roles that make up a table row.
-const ROW_CELL_ROLES: &[&str] = &["cell", "columnheader", "rowheader"];
+const ROW_CELL_ROLES: &[&str] = &["cell", "gridcell", "columnheader", "rowheader"];
 
 /// Extract the string payload of an `AXValue` (`{type, value}`).
 fn ax_string(opt: Option<&AXValue>) -> String {
@@ -186,11 +189,18 @@ fn ax_extras(node: &AXNode, role: &str) -> Vec<String> {
     if node.prop_bool("selected") {
         out.push("selected".to_string());
     }
-    // Node value: input value, selected option text, combobox value.
+    // Node value: input value, selected option text, combobox value, slider
+    // position. Geometry is not available, so a slider's value is the only
+    // way an agent can reason about where it sits.
     if let Some(v) = node.value.as_ref() {
         let t = v.as_text();
         let t = t.trim();
-        if !t.is_empty() && (role == "textbox" || role == "searchbox" || role == "combobox") {
+        if !t.is_empty()
+            && matches!(
+                role,
+                "textbox" | "searchbox" | "combobox" | "slider" | "spinbutton"
+            )
+        {
             out.push(format!("value={t:?}"));
         }
     }
@@ -207,6 +217,7 @@ fn ax_extras(node: &AXNode, role: &str) -> Vec<String> {
 fn ancestor_contains(
     parent_of: &HashMap<&str, &str>,
     index: &HashMap<&str, &AXNode>,
+    role_of: &HashMap<&str, String>,
     start: &str,
     text: &str,
     depth: usize,
@@ -222,9 +233,58 @@ fn ancestor_contains(
         let Some(node) = index.get(parent) else {
             return false;
         };
+        let prole = role_of.get(parent).map(String::as_str).unwrap_or("");
         let pname = ax_name(node);
-        if !pname.is_empty() && pname.contains(text) {
+        if !pname.is_empty() && pname.contains(text) && ancestor_name_is_rendered(prole) {
             return true;
+        }
+        cur = parent;
+    }
+    false
+}
+
+/// True when a node with this role renders its own accessible name, so a
+/// child's identical text is a real duplicate.
+///
+/// Layout containers, landmarks and structure-only roles do not: their name is
+/// a concatenation of their subtree that is dropped, so treating it as a
+/// duplicate would lose the only copy of the text. This is the Hacker News
+/// footer case: a `LayoutTableCell` named `Guidelines | Search:` owns the
+/// "Search:" label, and the cell itself is never emitted.
+fn ancestor_name_is_rendered(role: &str) -> bool {
+    !LAYOUT_CONTAINER_ROLES.contains(&role)
+        && !LANDMARK_ROLES.contains(&role)
+        && !STRUCTURE_ONLY_ROLES.contains(&role)
+        && !matches!(role, "rowgroup" | "none" | "presentation" | "rootwebarea")
+}
+
+/// True when an ancestor within `depth` has a node value equal to `text`.
+///
+/// Chromium exposes an input's value both as `AXNode.value` and as a
+/// `StaticText` child, so the text would be emitted twice (`value="Ada"` and
+/// `Text: Ada`).
+fn ancestor_value_matches(
+    parent_of: &HashMap<&str, &str>,
+    index: &HashMap<&str, &AXNode>,
+    start: &str,
+    text: &str,
+    depth: usize,
+) -> bool {
+    if text.is_empty() {
+        return false;
+    }
+    let mut cur = start;
+    for _ in 0..depth {
+        let Some(parent) = parent_of.get(cur) else {
+            return false;
+        };
+        let Some(node) = index.get(parent) else {
+            return false;
+        };
+        if let Some(value) = node.value.as_ref() {
+            if value.as_text().trim() == text {
+                return true;
+            }
         }
         cur = parent;
     }
@@ -480,7 +540,135 @@ fn document_order<'a>(
     ordered
 }
 
+/// Compression mode for eval arms (default pruning vs full AX tree).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CompressOptions {
+    /// When `false`, emit every non-ignored node with no dedupe or layout folding.
+    pub prune: bool,
+}
+
+impl Default for CompressOptions {
+    fn default() -> Self {
+        Self { prune: true }
+    }
+}
+
+/// Ancestor count from the root (`RootWebArea` depth 0).
+fn node_depth(node_id: &str, parent_of: &HashMap<&str, &str>) -> usize {
+    let mut depth = 0usize;
+    let mut cur = node_id;
+    while let Some(parent) = parent_of.get(cur) {
+        depth += 1;
+        cur = parent;
+    }
+    depth
+}
+
 pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
+    compress_with_options(nodes, CompressOptions::default())
+}
+
+pub fn compress_with_options(
+    nodes: &[AXNode],
+    opts: CompressOptions,
+) -> (Vec<SemanticNode>, ActionMap) {
+    if !opts.prune {
+        return compress_full(nodes);
+    }
+    compress_pruned(nodes)
+}
+
+/// Full tree: every non-ignored node, document order, standard action IDs.
+fn compress_full(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
+    let mut out: Vec<SemanticNode> = Vec::with_capacity(nodes.len());
+    let mut map: ActionMap = HashMap::new();
+    let mut next_id: u32 = 1;
+
+    let mut parent_of: HashMap<&str, &str> = HashMap::new();
+    let mut role_of: HashMap<&str, String> = HashMap::with_capacity(nodes.len());
+    let mut children_of: HashMap<&str, Vec<&str>> = HashMap::new();
+    let mut index: HashMap<&str, &AXNode> = HashMap::with_capacity(nodes.len());
+    for n in nodes {
+        role_of.insert(n.node_id.as_str(), ax_role(n));
+        index.insert(n.node_id.as_str(), n);
+        for child in &n.child_ids {
+            parent_of.insert(child.as_str(), n.node_id.as_str());
+            children_of
+                .entry(n.node_id.as_str())
+                .or_default()
+                .push(child.as_str());
+        }
+    }
+
+    let ordered = document_order(nodes, &children_of, &parent_of);
+
+    let mut id_of_node: HashMap<&str, u32> = HashMap::new();
+    for node in &ordered {
+        if node.ignored {
+            continue;
+        }
+        let role = role_of
+            .get(node.node_id.as_str())
+            .map(String::as_str)
+            .unwrap_or("");
+        if !ACTIONABLE_ROLES.contains(&role) {
+            continue;
+        }
+        if node.backend_node_id.is_none() {
+            continue;
+        }
+        let id = next_id;
+        next_id += 1;
+        map.insert(id, node.backend_node_id.expect("checked above"));
+        id_of_node.insert(node.node_id.as_str(), id);
+    }
+
+    for node in &ordered {
+        if node.ignored {
+            continue;
+        }
+        let role = role_of
+            .get(node.node_id.as_str())
+            .map(String::as_str)
+            .unwrap_or("");
+        let mut name = ax_name(node);
+        if name.is_empty() && derives_name_from_children(role) {
+            name = derive_name(node.node_id.as_str(), &children_of, &index);
+        }
+        let depth = node_depth(node.node_id.as_str(), &parent_of);
+        let extras = ax_extras(node, role);
+        if ACTIONABLE_ROLES.contains(&role) {
+            if let Some(&id) = id_of_node.get(node.node_id.as_str()) {
+                if name.is_empty() {
+                    name = "(unlabeled)".to_string();
+                }
+                out.push(SemanticNode {
+                    action_id: Some(id),
+                    role: role.to_string(),
+                    name,
+                    extras,
+                    level: ax_level(node),
+                    node_id: node.node_id.clone(),
+                    depth,
+                });
+                continue;
+            }
+        }
+        out.push(SemanticNode {
+            action_id: None,
+            level: ax_level(node),
+            role: role.to_string(),
+            name,
+            extras,
+            node_id: node.node_id.clone(),
+            depth,
+        });
+    }
+
+    (out, map)
+}
+
+fn compress_pruned(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
     let mut out: Vec<SemanticNode> = Vec::with_capacity(nodes.len() / 2);
     let mut map: ActionMap = HashMap::new();
     let mut next_id: u32 = 1;
@@ -608,6 +796,22 @@ pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
             name = derive_name(node.node_id.as_str(), &children_of, &index);
         }
 
+        // An image that repeats an ancestor's accessible name (an icon link
+        // whose only content is the image) adds a duplicate line, not content.
+        if role == "image"
+            && !name.is_empty()
+            && ancestor_contains(
+                &parent_of,
+                &index,
+                &role_of,
+                node.node_id.as_str(),
+                &name,
+                3,
+            )
+        {
+            continue;
+        }
+
         // InlineTextBox is pure layout noise - always drop.
         if role == "inlinetextbox" {
             continue;
@@ -620,7 +824,11 @@ pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
                     continue;
                 }
                 // Text already present in an ancestor's name -> redundant.
-                if ancestor_contains(&parent_of, &index, pid, &name, 3) {
+                if ancestor_contains(&parent_of, &index, &role_of, pid, &name, 3) {
+                    continue;
+                }
+                // A control's value is already rendered as `value="..."`.
+                if ancestor_value_matches(&parent_of, &index, node.node_id.as_str(), &name, 3) {
                     continue;
                 }
             }
@@ -638,6 +846,7 @@ pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
                     name: text.clone(),
                     extras: Vec::new(),
                     node_id: node.node_id.clone(),
+                    depth: node_depth(node.node_id.as_str(), &parent_of),
                 });
             }
             // The cells themselves are emitted as part of the row line.
@@ -669,6 +878,7 @@ pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
                 name: String::new(),
                 extras: Vec::new(),
                 node_id: node.node_id.clone(),
+                depth: node_depth(node.node_id.as_str(), &parent_of),
             });
             continue;
         }
@@ -745,6 +955,7 @@ pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
                     extras,
                     level: None,
                     node_id: node.node_id.clone(),
+                    depth: node_depth(node.node_id.as_str(), &parent_of),
                 });
                 continue;
             }
@@ -769,6 +980,7 @@ pub fn compress(nodes: &[AXNode]) -> (Vec<SemanticNode>, ActionMap) {
             name,
             extras,
             node_id: node.node_id.clone(),
+            depth: node_depth(node.node_id.as_str(), &parent_of),
         });
     }
 
@@ -809,6 +1021,60 @@ mod tests {
     fn with_children(mut n: AXNode, children: &[&str]) -> AXNode {
         n.child_ids = children.iter().map(|s| s.to_string()).collect();
         n
+    }
+
+    #[test]
+    fn text_inside_a_dropped_layout_cell_survives() {
+        // Hacker News footer: the LayoutTableCell's name is the concatenation
+        // of its children and the cell itself is dropped, so its StaticText
+        // child is NOT a duplicate. Treating it as one lost "Search:".
+        let cell = with_children(
+            node("1", "layouttablecell", "Guidelines | Search:", Some(1)),
+            &["2", "3"],
+        );
+        let link = with_children(node("2", "link", "Guidelines", Some(2)), &["4"]);
+        let label = node("3", "statictext", "Search:", None);
+        let link_text = node("4", "statictext", "Guidelines", None);
+        let (out, _) = compress(&[cell, link, label, link_text]);
+        let names: Vec<&str> = out.iter().map(|n| n.name.as_str()).collect();
+        assert!(names.contains(&"Search:"), "label dropped: {names:?}");
+        assert_eq!(
+            names.iter().filter(|n| **n == "Guidelines").count(),
+            1,
+            "link text duplicated: {names:?}"
+        );
+    }
+
+    #[test]
+    fn full_tree_is_a_superset_of_pruned_nodes() {
+        let cell = with_children(
+            node("1", "layouttablecell", "Guidelines | Search:", Some(1)),
+            &["2", "3"],
+        );
+        let link = with_children(node("2", "link", "Guidelines", Some(2)), &["4"]);
+        let label = node("3", "statictext", "Search:", None);
+        let link_text = node("4", "statictext", "Guidelines", None);
+        let nodes = [cell, link, label, link_text];
+        let (pruned, _) = super::compress_pruned(&nodes);
+        let (full, _) = super::compress_full(&nodes);
+        assert!(
+            full.len() >= pruned.len(),
+            "full={} pruned={}",
+            full.len(),
+            pruned.len()
+        );
+    }
+
+    #[test]
+    fn slider_and_spinbutton_render_their_value() {
+        let mut slider = node("1", "slider", "Zoom", Some(1));
+        slider.value = Some(val("50"));
+        let mut spin = node("2", "spinbutton", "Quantity", Some(2));
+        spin.value = Some(val("3"));
+        let (out, map) = compress(&[slider, spin]);
+        assert_eq!(map.len(), 2, "both controls are actionable");
+        assert!(out[0].extras.contains(&"value=\"50\"".to_string()));
+        assert!(out[1].extras.contains(&"value=\"3\"".to_string()));
     }
 
     #[test]

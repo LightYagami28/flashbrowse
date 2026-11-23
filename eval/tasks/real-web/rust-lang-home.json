@@ -1,0 +1,12 @@
+{
+  "id": "rust-lang-home",
+  "url": "https://www.rust-lang.org",
+  "goal": "Confirm the Rust programming language home page loaded.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.title.toLowerCase().includes('rust') && document.body.innerText.includes('Rust')"
+    }
+  ],
+  "max_turns": 3
+}

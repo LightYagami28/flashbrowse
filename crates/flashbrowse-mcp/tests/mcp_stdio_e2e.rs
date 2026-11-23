@@ -81,7 +81,7 @@ async fn test_mcp_stdio_e2e() {
         .and_then(|r| r.get("tools"))
         .and_then(|t| t.as_array())
         .expect("tools list");
-    assert_eq!(tools.len(), 4);
+    assert_eq!(tools.len(), 5);
     let names: Vec<String> = tools
         .iter()
         .filter_map(|t| t.get("name").and_then(|v| v.as_str()).map(str::to_string))
@@ -90,6 +90,7 @@ async fn test_mcp_stdio_e2e() {
         "browser_open",
         "browser_act",
         "browser_extract_markdown",
+        "browser_evaluate",
         "browser_screenshot",
     ] {
         assert!(names.contains(&want.to_string()), "missing tool {want}");

@@ -1,0 +1,125 @@
+{
+  "runs": [
+    {
+      "task_id": "a11y-read-more-count",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 2,
+      "input_tokens": 591,
+      "output_tokens": 169,
+      "wall_ms": 6791,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "forms-country-japan",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2462,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "forms-name-ada",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2240,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "forms-select-france",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2336,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "forms-subscribe-checked",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2861,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "frames-parent-text",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1980,
+      "failure_category": "Rate limit exceeded: free-models-per-min. "
+    },
+    {
+      "task_id": "shadow-button",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2098,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "spatial-slider-value",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2268,
+      "failure_category": "Provider returned error"
+    },
+    {
+      "task_id": "table-row-25",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 1134,
+      "failure_category": "Rate limit exceeded: free-models-per-min. "
+    },
+    {
+      "task_id": "unicode-cafe",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 1,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "wall_ms": 2465,
+      "failure_category": "Provider returned error"
+    }
+  ],
+  "opts": {
+    "base": "http://127.0.0.1:8099",
+    "binary": "../target/release/flashbrowse",
+    "tasksDir": "tasks/pilot",
+    "arm": "a",
+    "repeats": 1,
+    "out": "results/pilot-ling-arm-a.json",
+    "dryRun": false,
+    "model": "inclusionai/ling-3.2-flash:free",
+    "maxTurns": 8
+  }
+}

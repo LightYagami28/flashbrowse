@@ -1,0 +1,110 @@
+{
+  "jobs": [
+    {
+      "id": "dry-pilot",
+      "tasks": "tasks/pilot",
+      "dry_run": true,
+      "base": "http://127.0.0.1:8099",
+      "out": "dry-pilot-v2.json",
+      "fixtures": true
+    },
+    {
+      "id": "dry-stress",
+      "tasks": "tasks/stress-local",
+      "dry_run": true,
+      "base": "http://127.0.0.1:8099",
+      "out": "dry-stress-v2.json",
+      "fixtures": true
+    },
+    {
+      "id": "dry-real",
+      "tasks": "tasks/real-web",
+      "dry_run": true,
+      "out": "dry-real-v2.json"
+    },
+    {
+      "id": "nemotron-pilot-a-r2",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "repeats": 2,
+      "base": "http://127.0.0.1:8099",
+      "out": "pilot-nemotron-arm-a-r2.json",
+      "fixtures": true
+    },
+    {
+      "id": "nemotron-pilot-b-r2",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "repeats": 2,
+      "base": "http://127.0.0.1:8099",
+      "out": "pilot-nemotron-arm-b-r2.json",
+      "fixtures": true
+    },
+    {
+      "id": "nemotron-pilot-c-r1",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "repeats": 1,
+      "base": "http://127.0.0.1:8099",
+      "out": "pilot-nemotron-arm-c-rerun.json",
+      "fixtures": true
+    },
+    {
+      "id": "nemotron-stress-a",
+      "tasks": "tasks/stress-local",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "repeats": 1,
+      "base": "http://127.0.0.1:8099",
+      "out": "stress-nemotron-arm-a.json",
+      "fixtures": true
+    },
+    {
+      "id": "nemotron-stress-c",
+      "tasks": "tasks/stress-local",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "repeats": 1,
+      "base": "http://127.0.0.1:8099",
+      "out": "stress-nemotron-arm-c.json",
+      "fixtures": true
+    },
+    {
+      "id": "nemotron-real-a-r2",
+      "tasks": "tasks/real-web",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "repeats": 2,
+      "out": "real-nemotron-arm-a-r2.json"
+    },
+    {
+      "id": "nemotron-real-b",
+      "tasks": "tasks/real-web",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "repeats": 1,
+      "out": "real-nemotron-arm-b.json"
+    },
+    {
+      "id": "ling-pilot-b",
+      "tasks": "tasks/pilot",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "b",
+      "repeats": 1,
+      "base": "http://127.0.0.1:8099",
+      "out": "pilot-ling-arm-b.json",
+      "fixtures": true
+    },
+    {
+      "id": "ling-real-a",
+      "tasks": "tasks/real-web",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "a",
+      "repeats": 1,
+      "out": "real-ling-arm-a.json"
+    }
+  ]
+}

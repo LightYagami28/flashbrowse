@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" alt="flashbrowse icon" width="128" height="128">
+</p>
+
 # flashbrowse
 
 Industrial-grade, single-binary, headless browser controller and token-compression
@@ -73,7 +77,7 @@ flashbrowse setup                    # download managed Chrome-for-Testing (~120
 flashbrowse open <url>               # compressed action tree (ephemeral browser)
 flashbrowse open <url> --session-id s1   # ...and keep the browser alive
 flashbrowse act <id> --session-id s1 --action click --value ...
-flashbrowse dump <url> --format markdown|axtree
+flashbrowse dump <url> --format markdown|axtree|raw
 flashbrowse bench <url>              # latency + token self-measurement
 flashbrowse mcp                      # MCP stdio server for Claude Code / Cursor / Codex
 flashbrowse close --session-id s1    # stop a persistent browser
@@ -251,6 +255,11 @@ latency percentiles, first-tenth vs last-tenth drift, RSS of the flashbrowse
 process and of the browser, the orphan-browser count, and the error list.
 CI runs a 5-minute version of the same harness on every push.
 
+Observed 90-minute mixed soak (`5,401 s`, 7 local + public URLs):
+- **Throughput:** 3,366 iterations, 13,152 tool calls (`2.435/s`), **0 errors** (`0.00%`)
+- **Latency & drift:** `p50 = 255 ms`, `p95 = 1,288 ms`, `drift_ratio = 0.985` (first-tenth `259 ms` -> last-tenth `255 ms`)
+- **Memory & cleanup:** `leak_gate.ok = true` (post-warmup `119,804 kB` -> `116,340 kB`, ratio `0.971`), **0** leaked Chrome processes at exit
+
 ### What is blocked, and why
 
 Measured byte shares of a real page load (Chrome `Network.loadingFinished`):
@@ -301,6 +310,41 @@ how fast the network is: the wait ends when the *browser* says the page is
 done. Repeated opens produce byte-identical trees (the truncation guard test
 asserts this), and a page that fails to render is reported as an error instead
 of an empty tree.
+
+### What is measured vs not measured
+
+Fidelity and pilot task checks live in [`EVAL.md`](EVAL.md) (dev-only harness
+under [`eval/`](eval/)):
+- **Fidelity oracle:** 100% visible text recall (0 missing strings) across
+  all 8 fixture pages, with 90.6%-98.7% byte reduction vs raw AXTree JSON.
+- **Pilot task eval (10 tasks):** 8/10 read-only oracle pass; 8/10 LLM pilot
+  pass with nested/full observation arms (`nvidia/nemotron-3.5-super-vl:free`)
+  vs 5/10 flat.
+
+There is no WebArena, Mind2Web or WebVoyager run in this repo yet, so broad
+external benchmark claims are not made.
+
+Known limits of the text tree:
+
+- **Nesting is dropped.** Lines are flat and in document order. Containment
+  ("this link is in the footer") is not encoded, only implied by order.
+- **No geometry.** No bounding boxes or coordinates. `browser_screenshot`
+  returns pixels on the same session, but no set-of-marks overlay, so a vision
+  model can look and still has to act through the text tree's IDs.
+- **Spatial and visual tasks are out of scope** for the text tree: canvas,
+  charts, color, drag distance, map clicks.
+- **Truncation.** Names longer than 120 characters and extras longer than 80
+  are elided with an ellipsis.
+- **Repeated identical text may appear once** because layout containers are
+  folded. The text survives; the count of duplicates does not.
+- **Images without alt text contribute nothing**, because they have no
+  accessible name.
+
+Task-level numbers (when they exist) live in [`EVAL.md`](EVAL.md). The
+dev-only harness is under [`eval/`](eval/).
+
+`dump --format raw` prints the uncompressed CDP AX tree, which is the ground
+truth the compressor is measured against.
 
 ### Where the rivals still win
 

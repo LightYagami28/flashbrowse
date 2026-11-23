@@ -4,6 +4,6 @@ pub mod compressor;
 pub mod formatter;
 pub mod node;
 
-pub use compressor::compress;
-pub use formatter::render;
+pub use compressor::{compress, compress_with_options, CompressOptions};
+pub use formatter::{render, render_nested};
 pub use node::{ActionMap, SemanticNode};

@@ -6,6 +6,7 @@
 //! flashbrowse open https://github.com --session-id s1 # persistent tab
 //! flashbrowse act 3 --session-id s1 --action click    # click [3] on s1
 //! flashbrowse dump https://example.com --format markdown
+//! flashbrowse dump https://example.com --format raw   # uncompressed AX tree
 //! flashbrowse bench https://example.com
 //! flashbrowse setup                                  # managed Chrome
 //! flashbrowse close --session-id s1
@@ -91,14 +92,19 @@ enum Commands {
         #[arg(long)]
         value: Option<String>,
     },
-    /// Extract clean content (Markdown or raw AXTree) from a URL.
+    /// Extract Markdown, the compressed AXTree, or the raw CDP AX tree.
     Dump {
         /// Target URL. The scheme may be omitted: https is assumed, and local
         /// hosts (localhost, 127.0.0.1, LAN addresses) use http.
         url: String,
-        /// Output format.
+        /// Output format: `markdown`, `axtree` (compressed flat list),
+        /// `axtree-nested` (compressed, indented by depth), or `raw`
+        /// (uncompressed CDP AX tree as JSON).
         #[arg(long, default_value = "markdown")]
         format: String,
+        /// Skip compressor pruning (eval arm C/D): every non-ignored AX node.
+        #[arg(long)]
+        no_prune: bool,
     },
     /// Run token and latency benchmarks against targets.
     Bench {
@@ -224,9 +230,11 @@ async fn main() -> anyhow::Result<()> {
                 action,
                 value,
             } => commands::act::run(session_id, action_id, action, value, cli.chrome_path).await,
-            Commands::Dump { url, format } => {
-                commands::dump::run(url, format, cli.chrome_path, resource_policy).await
-            }
+            Commands::Dump {
+                url,
+                format,
+                no_prune,
+            } => commands::dump::run(url, format, no_prune, cli.chrome_path, resource_policy).await,
             Commands::Bench { urls } => {
                 commands::bench::run(urls, cli.chrome_path, resource_policy).await
             }

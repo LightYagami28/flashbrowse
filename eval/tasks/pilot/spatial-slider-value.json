@@ -1,0 +1,9 @@
+{
+  "id": "spatial-slider-value",
+  "fixture": "spatial.html",
+  "goal": "Read the drag slider default value (50).",
+  "success": [
+    { "kind": "element_state", "selector": "#zoom", "prop": "value", "equals": "50" }
+  ],
+  "max_turns": 6
+}

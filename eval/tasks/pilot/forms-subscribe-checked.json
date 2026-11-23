@@ -1,0 +1,9 @@
+{
+  "id": "forms-subscribe-checked",
+  "fixture": "forms.html",
+  "goal": "Verify the Subscribe checkbox is checked.",
+  "success": [
+    { "kind": "element_state", "selector": "#subscribe", "prop": "checked", "equals": "true" }
+  ],
+  "max_turns": 4
+}

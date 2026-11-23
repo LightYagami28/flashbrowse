@@ -1,0 +1,12 @@
+{
+  "id": "jsonplaceholder-posts",
+  "url": "https://jsonplaceholder.typicode.com/posts/1",
+  "goal": "Read the post title (first heading) and confirm it mentions sunt.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.body.innerText.toLowerCase().includes('sunt')"
+    }
+  ],
+  "max_turns": 4
+}

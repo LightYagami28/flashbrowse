@@ -1,0 +1,12 @@
+{
+  "id": "example-domain",
+  "url": "https://example.com",
+  "goal": "Confirm this is the IANA Example Domain page.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.title.includes('Example') && document.body.innerText.includes('Example Domain')"
+    }
+  ],
+  "max_turns": 2
+}

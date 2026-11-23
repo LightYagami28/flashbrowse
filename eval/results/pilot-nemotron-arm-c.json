@@ -1,0 +1,125 @@
+{
+  "runs": [
+    {
+      "task_id": "a11y-read-more-count",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 2,
+      "input_tokens": 2334,
+      "output_tokens": 249,
+      "wall_ms": 9805,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-country-japan",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 4134,
+      "output_tokens": 311,
+      "wall_ms": 11065,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-name-ada",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 4782,
+      "output_tokens": 398,
+      "wall_ms": 13834,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-select-france",
+      "arm": "c",
+      "repeat": 0,
+      "success": false,
+      "turns": 4,
+      "input_tokens": 7980,
+      "output_tokens": 1480,
+      "wall_ms": 21796,
+      "failure_category": "CDP error: CDP protocol error for Runtime.callFunctionOn: code -32602: Invalid parameters"
+    },
+    {
+      "task_id": "forms-subscribe-checked",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 4119,
+      "output_tokens": 308,
+      "wall_ms": 11344,
+      "failure_category": null
+    },
+    {
+      "task_id": "frames-parent-text",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 2761,
+      "output_tokens": 430,
+      "wall_ms": 13786,
+      "failure_category": null
+    },
+    {
+      "task_id": "shadow-button",
+      "arm": "c",
+      "repeat": 0,
+      "success": false,
+      "turns": 2,
+      "input_tokens": 1607,
+      "output_tokens": 145,
+      "wall_ms": 8138,
+      "failure_category": "dom_text body"
+    },
+    {
+      "task_id": "spatial-slider-value",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 2964,
+      "output_tokens": 253,
+      "wall_ms": 10332,
+      "failure_category": null
+    },
+    {
+      "task_id": "table-row-25",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 27662,
+      "output_tokens": 792,
+      "wall_ms": 14656,
+      "failure_category": null
+    },
+    {
+      "task_id": "unicode-cafe",
+      "arm": "c",
+      "repeat": 0,
+      "success": true,
+      "turns": 2,
+      "input_tokens": 2434,
+      "output_tokens": 316,
+      "wall_ms": 9505,
+      "failure_category": null
+    }
+  ],
+  "opts": {
+    "base": "http://127.0.0.1:8099",
+    "binary": "../target/release/flashbrowse",
+    "tasksDir": "tasks/pilot",
+    "arm": "c",
+    "repeats": 1,
+    "out": "results/pilot-nemotron-arm-c.json",
+    "dryRun": false,
+    "model": "nvidia/nemotron-3.5-super-vl:free",
+    "maxTurns": 8
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "id": "a11y-read-more-count",
+  "fixture": "a11y.html",
+  "goal": "Count how many distinct Read more links appear in the tree (expect five).",
+  "success": [
+    { "kind": "dom_text", "selector": "body", "includes": "Read more" }
+  ],
+  "max_turns": 4
+}

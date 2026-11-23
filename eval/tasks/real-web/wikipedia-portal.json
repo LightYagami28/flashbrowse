@@ -1,0 +1,12 @@
+{
+  "id": "wikipedia-portal",
+  "url": "https://www.wikipedia.org",
+  "goal": "Confirm Wikipedia portal loaded (search or language links present).",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.body.innerText.toLowerCase().includes('wikipedia') && !!document.querySelector('input[type=search], #searchInput, .search-input')"
+    }
+  ],
+  "max_turns": 2
+}

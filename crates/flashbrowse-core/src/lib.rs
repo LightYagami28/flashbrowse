@@ -25,5 +25,7 @@ pub use session::{
     BrowserSession, CoreError, DetachedSession, ScreenshotOptions, SessionConfig,
     SCREENSHOT_PREPARE_MS_DEFAULT, SCREENSHOT_PREPARE_MS_MAX,
 };
-pub use tree::{ActionMap, SemanticNode};
+pub use tree::{
+    compress_with_options, render, render_nested, ActionMap, CompressOptions, SemanticNode,
+};
 pub use url_norm::{normalize_url, UrlError};

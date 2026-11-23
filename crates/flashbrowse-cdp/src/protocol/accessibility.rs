@@ -11,7 +11,7 @@ use crate::error::CdpError;
 use crate::transport::CdpClient;
 
 /// AXTree node value. CDP reuses `{type, value}` pairs; `value` is untyped.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AXValue {
     #[serde(rename = "type", default)]
     pub type_: Option<String>,
@@ -31,9 +31,17 @@ impl AXValue {
         }
     }
 
-    /// Boolean payload (`true` only for a literal `true`).
+    /// Boolean payload.
+    ///
+    /// Chromium is inconsistent: `readonly` arrives as a JSON `true`, while
+    /// `checked` arrives as the string `"true"`. Treating only the JSON bool
+    /// as true silently dropped every checked checkbox and radio.
     pub fn as_bool(&self) -> bool {
-        matches!(self.value.as_ref(), Some(Value::Bool(true)))
+        match self.value.as_ref() {
+            Some(Value::Bool(b)) => *b,
+            Some(Value::String(s)) => s.eq_ignore_ascii_case("true"),
+            _ => false,
+        }
     }
 
     /// Integer payload.
@@ -47,7 +55,7 @@ impl AXValue {
 }
 
 /// AXTree node property (states like `level`, `checked`, `disabled`, `value`).
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AXProperty {
     pub name: String,
     #[serde(default)]
@@ -55,7 +63,7 @@ pub struct AXProperty {
 }
 
 /// Reason a node was excluded from the AX tree.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct AXIgnoredReason {
     pub name: String,
     #[serde(default)]
@@ -63,7 +71,10 @@ pub struct AXIgnoredReason {
 }
 
 /// Single accessibility-tree node returned by `Accessibility.getFullAXTree`.
-#[derive(Debug, Clone, Deserialize)]
+///
+/// `Serialize` exists for the raw dump (`dump --format raw`) and for tests
+/// that need a faithful copy of what Chromium sent.
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AXNode {
     pub node_id: String,

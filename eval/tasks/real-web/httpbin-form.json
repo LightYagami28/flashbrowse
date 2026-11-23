@@ -1,0 +1,12 @@
+{
+  "id": "httpbin-form",
+  "url": "https://httpbin.org/forms/post",
+  "goal": "Fill customer name with Bob and set size to large, then submit the form.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "location.href.includes('httpbin') && (document.body.innerText.includes('Bob') || document.body.innerText.includes('form'))"
+    }
+  ],
+  "max_turns": 12
+}

@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-11-23T02:09:03.628Z",
+  "binary": "./target/release/flashbrowse",
+  "pages": [
+    {
+      "url": "http://127.0.0.1:8099/index.html",
+      "ok": true,
+      "ms": 1667,
+      "staticTexts": 35,
+      "missing": [],
+      "rawBytes": 77127,
+      "treeBytes": 4713,
+      "reduction": 0.9388929946711269
+    },
+    {
+      "url": "http://127.0.0.1:8099/forms.html",
+      "ok": true,
+      "ms": 3428,
+      "staticTexts": 7,
+      "missing": [],
+      "rawBytes": 18552,
+      "treeBytes": 661,
+      "reduction": 0.964370418283743
+    },
+    {
+      "url": "http://127.0.0.1:8099/table.html",
+      "ok": true,
+      "ms": 1558,
+      "staticTexts": 1,
+      "missing": [],
+      "rawBytes": 123979,
+      "treeBytes": 1573,
+      "reduction": 0.9873123674170625
+    },
+    {
+      "url": "http://127.0.0.1:8099/a11y.html",
+      "ok": true,
+      "ms": 3346,
+      "staticTexts": 0,
+      "missing": [],
+      "rawBytes": 13846,
+      "treeBytes": 459,
+      "reduction": 0.966849631662574
+    },
+    {
+      "url": "http://127.0.0.1:8099/unicode.html",
+      "ok": true,
+      "ms": 3513,
+      "staticTexts": 3,
+      "missing": [],
+      "rawBytes": 6495,
+      "treeBytes": 609,
+      "reduction": 0.9062355658198614
+    },
+    {
+      "url": "http://127.0.0.1:8099/shadow.html",
+      "ok": true,
+      "ms": 3642,
+      "staticTexts": 3,
+      "missing": [],
+      "rawBytes": 4941,
+      "treeBytes": 293,
+      "reduction": 0.9407002631046347
+    },
+    {
+      "url": "http://127.0.0.1:8099/frames.html",
+      "ok": true,
+      "ms": 3506,
+      "staticTexts": 2,
+      "missing": [],
+      "rawBytes": 3376,
+      "treeBytes": 233,
+      "reduction": 0.9309834123222749
+    },
+    {
+      "url": "http://127.0.0.1:8099/spatial.html",
+      "ok": true,
+      "ms": 3812,
+      "staticTexts": 6,
+      "missing": [],
+      "rawBytes": 6882,
+      "treeBytes": 321,
+      "reduction": 0.9533565823888405
+    }
+  ],
+  "summary": {
+    "pages": 8,
+    "failed": 0,
+    "missing": 0
+  }
+}

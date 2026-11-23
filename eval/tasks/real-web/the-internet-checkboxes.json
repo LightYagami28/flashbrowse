@@ -1,0 +1,12 @@
+{
+  "id": "internet-checkboxes",
+  "url": "https://the-internet.herokuapp.com/checkboxes",
+  "goal": "Check both checkboxes on the page.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.querySelectorAll('input[type=checkbox]:checked').length === 2"
+    }
+  ],
+  "max_turns": 8
+}

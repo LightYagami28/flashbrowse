@@ -1,0 +1,125 @@
+{
+  "runs": [
+    {
+      "task_id": "a11y-read-more-count",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 2,
+      "input_tokens": 1592,
+      "output_tokens": 255,
+      "wall_ms": 7340,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-country-japan",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 2961,
+      "output_tokens": 399,
+      "wall_ms": 7807,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-name-ada",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 4,
+      "input_tokens": 4126,
+      "output_tokens": 482,
+      "wall_ms": 13304,
+      "failure_category": null
+    },
+    {
+      "task_id": "forms-select-france",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 8,
+      "input_tokens": 19422,
+      "output_tokens": 2090,
+      "wall_ms": 26321,
+      "failure_category": "element_state #country"
+    },
+    {
+      "task_id": "forms-subscribe-checked",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 2741,
+      "output_tokens": 232,
+      "wall_ms": 6228,
+      "failure_category": null
+    },
+    {
+      "task_id": "frames-parent-text",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 3,
+      "input_tokens": 1348,
+      "output_tokens": 398,
+      "wall_ms": 7762,
+      "failure_category": "Rate limit exceeded: free-models-per-min. "
+    },
+    {
+      "task_id": "shadow-button",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 3,
+      "input_tokens": 2203,
+      "output_tokens": 236,
+      "wall_ms": 8039,
+      "failure_category": "dom_text body"
+    },
+    {
+      "task_id": "spatial-slider-value",
+      "arm": "a",
+      "repeat": 0,
+      "success": true,
+      "turns": 3,
+      "input_tokens": 2386,
+      "output_tokens": 263,
+      "wall_ms": 7140,
+      "failure_category": null
+    },
+    {
+      "task_id": "table-row-25",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 2,
+      "input_tokens": 1194,
+      "output_tokens": 135,
+      "wall_ms": 2911,
+      "failure_category": "Rate limit exceeded: free-models-per-min. "
+    },
+    {
+      "task_id": "unicode-cafe",
+      "arm": "a",
+      "repeat": 0,
+      "success": false,
+      "turns": 2,
+      "input_tokens": 684,
+      "output_tokens": 142,
+      "wall_ms": 4720,
+      "failure_category": "Rate limit exceeded: free-models-per-min. "
+    }
+  ],
+  "opts": {
+    "base": "http://127.0.0.1:8099",
+    "binary": "../target/release/flashbrowse",
+    "tasksDir": "tasks/pilot",
+    "arm": "a",
+    "repeats": 1,
+    "out": "results/pilot-nemotron-arm-a.json",
+    "dryRun": false,
+    "model": "nvidia/nemotron-3.5-super-vl:free",
+    "maxTurns": 8
+  }
+}

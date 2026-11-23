@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8" /><title>contenteditable</title></head>
+  <body>
+    <h1>RTE</h1>
+    <div id="editor" contenteditable="true">seed text</div>
+    <button id="read">Read</button>
+    <p id="mirror"></p>
+    <script>
+      document.getElementById("read").onclick = () => {
+        document.getElementById("mirror").textContent = document.getElementById("editor").innerText;
+      };
+    </script>
+  </body>
+</html>

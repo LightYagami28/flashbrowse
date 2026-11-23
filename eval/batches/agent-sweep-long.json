@@ -1,0 +1,80 @@
+{
+  "jobs": [
+    {
+      "id": "nemotron-pilot-a-r3",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "repeats": 3,
+      "base": "http://127.0.0.1:8099",
+      "fixtures": true,
+      "out": "pilot-nemotron-arm-a-r3.json"
+    },
+    {
+      "id": "nemotron-pilot-b-r3",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "repeats": 3,
+      "base": "http://127.0.0.1:8099",
+      "fixtures": true,
+      "out": "pilot-nemotron-arm-b-r3.json"
+    },
+    {
+      "id": "nemotron-pilot-c-r3",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "c",
+      "repeats": 3,
+      "base": "http://127.0.0.1:8099",
+      "fixtures": true,
+      "out": "pilot-nemotron-arm-c-r3.json"
+    },
+    {
+      "id": "nemotron-pilot-d-r1",
+      "tasks": "tasks/pilot",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "d",
+      "repeats": 2,
+      "base": "http://127.0.0.1:8099",
+      "fixtures": true,
+      "out": "pilot-nemotron-arm-d-r2.json"
+    },
+    {
+      "id": "nemotron-real-a-r3",
+      "tasks": "tasks/real-web",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "a",
+      "repeats": 3,
+      "out": "real-nemotron-arm-a-r3.json"
+    },
+    {
+      "id": "nemotron-real-b-r2",
+      "tasks": "tasks/real-web",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "repeats": 2,
+      "out": "real-nemotron-arm-b-r2.json"
+    },
+    {
+      "id": "nemotron-stress-b-r2",
+      "tasks": "tasks/stress-local",
+      "model": "nvidia/nemotron-3.5-super-vl:free",
+      "arm": "b",
+      "repeats": 2,
+      "base": "http://127.0.0.1:8099",
+      "fixtures": true,
+      "out": "stress-nemotron-arm-b-r2.json"
+    },
+    {
+      "id": "ling-pilot-a-r2",
+      "tasks": "tasks/pilot",
+      "model": "inclusionai/ling-3.2-flash:free",
+      "arm": "a",
+      "repeats": 2,
+      "base": "http://127.0.0.1:8099",
+      "fixtures": true,
+      "out": "pilot-ling-arm-a-r2.json"
+    }
+  ]
+}

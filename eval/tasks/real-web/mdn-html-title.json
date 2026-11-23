@@ -1,0 +1,12 @@
+{
+  "id": "mdn-html-title",
+  "url": "https://developer.mozilla.org/en-US/docs/Web/HTML",
+  "goal": "Confirm the MDN HTML element reference page loaded.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.title.includes('HTML') && document.body.innerText.includes('HyperText Markup Language')"
+    }
+  ],
+  "max_turns": 3
+}

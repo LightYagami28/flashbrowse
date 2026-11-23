@@ -1,0 +1,12 @@
+{
+  "id": "heavy-row-150",
+  "fixture": "heavy-table.html",
+  "goal": "Confirm SKU sku-0150 appears in the table (row 150).",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.body.innerText.includes('sku-0150')"
+    }
+  ],
+  "max_turns": 4
+}

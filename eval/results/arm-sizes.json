@@ -1,0 +1,253 @@
+{
+  "measured_at": "2026-11-23T02:08:34.865Z",
+  "rows": [
+    {
+      "fixture": "a11y.html",
+      "url": "http://127.0.0.1:8099/a11y.html",
+      "arms": {
+        "a": {
+          "chars": 459,
+          "body_chars": 368,
+          "actions": 12
+        },
+        "b": {
+          "chars": 551,
+          "body_chars": 460,
+          "actions": 0
+        },
+        "c": {
+          "chars": 1488,
+          "body_chars": 1397,
+          "actions": 0
+        },
+        "d": {
+          "chars": 1088,
+          "body_chars": 997,
+          "actions": 13
+        },
+        "e": {
+          "chars": 494,
+          "body_chars": 494,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "forms.html",
+      "url": "http://127.0.0.1:8099/forms.html",
+      "arms": {
+        "a": {
+          "chars": 661,
+          "body_chars": 583,
+          "actions": 9
+        },
+        "b": {
+          "chars": 859,
+          "body_chars": 781,
+          "actions": 0
+        },
+        "c": {
+          "chars": 1855,
+          "body_chars": 1777,
+          "actions": 0
+        },
+        "d": {
+          "chars": 1335,
+          "body_chars": 1257,
+          "actions": 9
+        },
+        "e": {
+          "chars": 554,
+          "body_chars": 554,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "frames.html",
+      "url": "http://127.0.0.1:8099/frames.html",
+      "arms": {
+        "a": {
+          "chars": 233,
+          "body_chars": 153,
+          "actions": 0
+        },
+        "b": {
+          "chars": 257,
+          "body_chars": 177,
+          "actions": 0
+        },
+        "c": {
+          "chars": 555,
+          "body_chars": 475,
+          "actions": 0
+        },
+        "d": {
+          "chars": 477,
+          "body_chars": 397,
+          "actions": 0
+        },
+        "e": {
+          "chars": 129,
+          "body_chars": 129,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "index.html",
+      "url": "http://127.0.0.1:8099/index.html",
+      "arms": {
+        "a": {
+          "chars": 4709,
+          "body_chars": 4613,
+          "actions": 9
+        },
+        "b": {
+          "chars": 5269,
+          "body_chars": 5173,
+          "actions": 0
+        },
+        "c": {
+          "chars": 18392,
+          "body_chars": 18296,
+          "actions": 0
+        },
+        "d": {
+          "chars": 15266,
+          "body_chars": 15170,
+          "actions": 9
+        },
+        "e": {
+          "chars": 5850,
+          "body_chars": 5850,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "shadow.html",
+      "url": "http://127.0.0.1:8099/shadow.html",
+      "arms": {
+        "a": {
+          "chars": 293,
+          "body_chars": 209,
+          "actions": 1
+        },
+        "b": {
+          "chars": 327,
+          "body_chars": 243,
+          "actions": 0
+        },
+        "c": {
+          "chars": 846,
+          "body_chars": 762,
+          "actions": 0
+        },
+        "d": {
+          "chars": 708,
+          "body_chars": 624,
+          "actions": 1
+        },
+        "e": {
+          "chars": 196,
+          "body_chars": 196,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "spatial.html",
+      "url": "http://127.0.0.1:8099/spatial.html",
+      "arms": {
+        "a": {
+          "chars": 321,
+          "body_chars": 239,
+          "actions": 1
+        },
+        "b": {
+          "chars": 377,
+          "body_chars": 295,
+          "actions": 0
+        },
+        "c": {
+          "chars": 933,
+          "body_chars": 851,
+          "actions": 0
+        },
+        "d": {
+          "chars": 753,
+          "body_chars": 671,
+          "actions": 1
+        },
+        "e": {
+          "chars": 211,
+          "body_chars": 211,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "table.html",
+      "url": "http://127.0.0.1:8099/table.html",
+      "arms": {
+        "a": {
+          "chars": 1573,
+          "body_chars": 1495,
+          "actions": 3
+        },
+        "b": {
+          "chars": 2135,
+          "body_chars": 2057,
+          "actions": 0
+        },
+        "c": {
+          "chars": 15640,
+          "body_chars": 15562,
+          "actions": 0
+        },
+        "d": {
+          "chars": 8448,
+          "body_chars": 8370,
+          "actions": 3
+        },
+        "e": {
+          "chars": 4983,
+          "body_chars": 4983,
+          "actions": 0
+        }
+      }
+    },
+    {
+      "fixture": "unicode.html",
+      "url": "http://127.0.0.1:8099/unicode.html",
+      "arms": {
+        "a": {
+          "chars": 572,
+          "body_chars": 490,
+          "actions": 2
+        },
+        "b": {
+          "chars": 608,
+          "body_chars": 526,
+          "actions": 0
+        },
+        "c": {
+          "chars": 1302,
+          "body_chars": 1220,
+          "actions": 0
+        },
+        "d": {
+          "chars": 1138,
+          "body_chars": 1056,
+          "actions": 2
+        },
+        "e": {
+          "chars": 583,
+          "body_chars": 583,
+          "actions": 0
+        }
+      }
+    }
+  ]
+}

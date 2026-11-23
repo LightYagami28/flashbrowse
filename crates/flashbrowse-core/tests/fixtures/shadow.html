@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>flashbrowse fidelity - shadow DOM</title>
+  </head>
+  <body>
+    <h1>Shadow fixture</h1>
+    <p>Light DOM paragraph before the host.</p>
+
+    <div id="host"></div>
+
+    <p>Light DOM paragraph after the host.</p>
+
+    <script>
+      const root = document.getElementById("host").attachShadow({ mode: "open" });
+      root.innerHTML =
+        "<p>Shadow paragraph text.</p><button>Shadow button</button>";
+    </script>
+  </body>
+</html>

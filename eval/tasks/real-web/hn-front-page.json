@@ -1,0 +1,12 @@
+{
+  "id": "hn-front-page",
+  "url": "https://news.ycombinator.com",
+  "goal": "Confirm Hacker News front page loaded with at least one story rank.",
+  "success": [
+    {
+      "kind": "evaluate",
+      "expression": "document.body.innerText.includes('Hacker News') && document.querySelectorAll('.athing').length >= 1"
+    }
+  ],
+  "max_turns": 2
+}
