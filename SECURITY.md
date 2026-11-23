@@ -15,8 +15,10 @@ the revision you built so we can tell whether it is already fixed upstream.
 
 ## Reporting a Vulnerability
 
-Do not open a public issue for a security problem. Email
-<developer@lightyagami.dev> with:
+Do not open a public issue for a security problem. Use GitHub's private
+vulnerability reporting for this fork
+([Report a vulnerability](https://github.com/LightYagami28/flashbrowse/security/advisories/new))
+with:
 
 - the affected crate and the exact revision you tested;
 - reproduction steps and a proof of concept, if available;
