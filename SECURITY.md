@@ -20,13 +20,13 @@ Do not open a public issue for a security problem. Email
 
 - the affected crate and the exact revision you tested;
 - reproduction steps and a proof of concept, if available;
-- the impact on the CLI or on the MCP server;
+- the impact on the CLI or on the Model Context Protocol (MCP) server;
 - any mitigation you have already applied.
 
 You should receive an acknowledgement within five working days. We will keep
 the report private, prepare the fix in this fork and agree on disclosure with
 you before publishing details.
 
-Never include tokens, browser profiles, captured pages or other user data in a
+Keep tokens, browser profiles, captured pages and other user data out of a
 public report. If a bug leaks data, describe the path and the affected storage
-location without attaching the data.
+location instead of attaching the data.
