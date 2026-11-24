@@ -9,26 +9,26 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-tokio = { version = "1.40", features = ["full"] }
-tokio-tungstenite = { version = "0.24", features = ["connect"] }
-futures-util = "0.3"
-libc = "0.2"
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
+tokio = { version = "1.54.1", features = ["full"] }
+tokio-tungstenite = { version = "0.30.0", features = ["connect"] }
+futures-util = "0.3.34"
+libc = "0.2.191"
+reqwest = { version = "0.13.5", default-features = false, features = ["native-tls", "json", "stream"] }
 # Only `deflate` is enabled: Chrome-for-Testing archives are deflate/store
 # only, and the AES/LZMA/Zstd decoders are attack surface we never exercise.
-zip = { version = "9.0", default-features = false, features = ["deflate"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "2.0"
-anyhow = "1.0"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
-clap = { version = "4.5", features = ["derive", "env"] }
-which = "7.0"
-dashmap = "6.1"
-regex = "1.11"
-async-trait = "0.1"
-url = "2.5"
+zip = { version = "9.8.2", default-features = false, features = ["deflate"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+anyhow = "1.0.105"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "json"] }
+clap = { version = "4.6.9", features = ["derive", "env"] }
+which = "8.0.6"
+dashmap = "6.2.1"
+regex = "1.13.2"
+async-trait = "0.1.92"
+url = "2.5.9"
 
 [workspace.package]
 version = "1.0.2"

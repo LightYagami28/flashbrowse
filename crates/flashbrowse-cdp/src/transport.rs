@@ -95,7 +95,7 @@ impl CdpClient {
         let writer_flag = writer_alive.clone();
         tasks.push(tokio::spawn(async move {
             while let Some(text) = out_rx.recv().await {
-                if write.send(Message::Text(text)).await.is_err() {
+                if write.send(Message::Text(text.into())).await.is_err() {
                     break;
                 }
             }
