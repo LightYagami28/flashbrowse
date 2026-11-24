@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "flashbrowse"
+type: software
+authors:
+  - family-names: Maule
+    given-names: Alessandro
+    alias: Light Yagami
+    email: maule2703@gmail.com
+license: Apache-2.0
+repository-code: "https://github.com/LightYagami28/flashbrowse"
+date-released: "2026-11-23"
+abstract: >-
+  Single-binary, headless browser controller and token-compression engine in
+  Rust for AI agents, with an MCP stdio server. This repository is a fork of
+  nhrbuilds/flashbrowse.
